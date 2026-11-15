@@ -1645,6 +1645,10 @@ var FCF = (function () {
      pulsa «Importar este grupo» y la web entrega aquí los mismos datos que está mostrando. */
   function disponible() { return !!(window.AndroidApp && window.AndroidApp.fcfOpen); }
   function abrir(url, auto) { window.AndroidApp.fcfOpen(url || "", !!auto); }
+  function actualizar(url, grupId) {
+    if (window.AndroidApp.fcfUpdate) window.AndroidApp.fcfUpdate(url || "https://www.fcf.cat/ca/competicio", String(grupId || ""));
+    else abrir(url, true);
+  }
 
   function arr(x) {
     if (Array.isArray(x)) return x;
@@ -1723,7 +1727,7 @@ var FCF = (function () {
     }).join(" ");
   }
 
-  return { disponible: disponible, abrir: abrir, parsePartidos: parsePartidos, parseEquips: parseEquips, parseClas: parseClas, bonito: bonito, clean: clean };
+  return { disponible: disponible, abrir: abrir, actualizar: actualizar, parsePartidos: parsePartidos, parseEquips: parseEquips, parseClas: parseClas, bonito: bonito, clean: clean };
 })();
 
 /* =========================================================
@@ -2317,8 +2321,7 @@ var FCF = (function () {
   function fcfSync() {
     const l = S.fcf && S.fcf.link; if (!l) return;
     if (!FCF.disponible()) { toast("El calendario se actualiza desde la app de Android. Pide un código nuevo a tu compañero."); return; }
-    if (!l.url) { ACT.fcfOpen(); return; }
-    FCF.abrir(l.url, true);
+    FCF.actualizar(l.url, l.grupId);
   }
   window.__fcfImport = function (txt) {
     let d;
