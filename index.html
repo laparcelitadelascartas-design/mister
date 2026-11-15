@@ -363,6 +363,19 @@ a.btn { text-decoration: none; color: inherit; }
 .stbl tr.me th, .stbl tr.me td { background: var(--accent-soft); }
 .loading { padding: 20px 0; text-align: center; }
 
+/* Vídeo */
+.vwrap { margin: 0 -16px; background: #000; position: sticky; top: 0; z-index: 6; }
+.vwrap video { display: block; width: 100%; max-height: 42vh; background: #000; }
+.vctrl { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; }
+.vctrl button { min-height: 44px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); font-weight: 700; font-size: 14px; font-variant-numeric: tabular-nums; display: grid; place-items: center; }
+.vctrl button.play { background: var(--accent); border-color: var(--accent); color: #fff; }
+.vctrl button svg { width: 20px; height: 20px; }
+.vbar { display: flex; align-items: center; gap: 8px; background: var(--ink); color: var(--bg); border-radius: 12px; padding: 8px 10px; font-size: 14px; }
+.vbar span { flex: 1; }
+.vbar .btn { background: transparent; color: var(--bg); border-color: rgba(255,255,255,.3); }
+label.btn { cursor: pointer; }
+.evlist .link { font-size: 14.5px; padding: 0; text-align: left; }
+
 </style>
 </head>
 <body>
@@ -1821,7 +1834,7 @@ var FCF = (function () {
   const findS = (id) => S.sessions.find((s) => s.id === id);
   const findM = (id) => S.partidos.find((m) => m.id === id);
   const cur = () => (UI.page ? (UI.page.t === "draft" ? UI.draft : UI.page.t === "ses" ? findS(UI.page.id) : null) : null);
-  const curM = () => (UI.page && (UI.page.t === "match" || UI.page.t === "mlive") ? findM(UI.page.id) : null);
+  const curM = () => (UI.page && (UI.page.t === "match" || UI.page.t === "mlive" || UI.page.t === "video") ? findM(UI.page.id) : null);
   const persist = () => { if (UI.page && UI.page.t === "ses") save(); };
   const avail = () => { const av = S.players.filter((p) => p.disp); const gk = av.filter((p) => p.pos === "POR").length; return { N: av.length - gk, gk: gk }; };
   function formDefaults(fecha) {
@@ -2228,6 +2241,9 @@ var FCF = (function () {
         <div class="score-grid">${m.local ? side(us, "gf") : side(them, "gc")}<span class="score-sep">–</span>${m.local ? side(them, "gc") : side(us, "gf")}</div>
       </section>
       ${vMatchLive(m)}
+      <section class="card"><div class="card-h"><h2>Vídeo del partido</h2>${(m.ev || []).some((e) => e.vt != null) ? `<span class="tag">${(m.ev || []).filter((e) => e.vt != null).length} jugadas</span>` : ""}</div>
+        <p class="muted" style="font-size:14px">Sube o graba el vídeo, marca las jugadas y revísalas una a una o seguidas.</p>
+        <button class="btn" data-a="vopen" data-id="${m.id}">${ic("play")} Analizar vídeo</button></section>
       <section class="card"><h2>¿Cómo ha ido?</h2>
         <div class="chips">${[1, 2, 3, 4, 5].map((v) => `<button class="chip${m.val === v ? " on" : ""}" data-a="mset" data-k="val" data-v="${v}">${VAL[v]}</button>`).join("")}</div>
         <textarea data-mf="texto" aria-label="Descripción del partido" placeholder="Escríbelo como se lo contarías a tu segundo. Ej.: hemos fallado mucho en defensa, nos han marcado dos goles de córner y en la segunda parte nos ha faltado físico.">${esc(m.texto)}</textarea>
@@ -2492,6 +2508,98 @@ var FCF = (function () {
     try { if (on && navigator.wakeLock && !wake) navigator.wakeLock.request("screen").then((w) => { wake = w; }).catch(() => {}); if (!on && wake) { wake.release(); wake = null; } } catch (e) { /* nada */ }
   }
 
+  /* ---------- VÍDEO DEL PARTIDO ---------- */
+  const hms = (t) => { t = Math.max(0, Math.floor(t || 0)); const h = Math.floor(t / 3600), m = Math.floor((t % 3600) / 60), x = t % 60; return (h ? h + ":" + String(m).padStart(2, "0") : String(m).padStart(2, "0")) + ":" + String(x).padStart(2, "0"); };
+  const vtime = (m, e) => (e.vt != null ? e.vt : (m.video && m.video.ini && m.video.ini[e.p] != null ? m.video.ini[e.p] + e.s : null));
+  function partFromVt(m, vt) {
+    const ini = (m.video && m.video.ini) || {};
+    let p = 1, base = null;
+    Object.keys(ini).map(Number).sort((a, b) => a - b).forEach((k) => { if (ini[k] <= vt) { p = k; base = ini[k]; } });
+    return { p, s: Math.max(0, Math.round(base != null ? vt - base : vt)) };
+  }
+  const VFIL = [["all", "Todas", null], ["gol", "Goles", ["gol", "gol_r"]], ["tiros", "Tiros", ["gol", "tiro_p", "tiro_f", "ocasion"]], ["perdida", "Pérdidas", ["perdida"]], ["recup", "Recuperaciones", ["recup"]], ["abp", "Córners y faltas", ["corner", "corner_r", "falta_r", "falta_c"]], ["rival", "Rival", ["gol_r", "tiro_r", "tiro_rf", "corner_r"]]];
+  function jugadas(m) {
+    const f = VFIL.find((x) => x[0] === (UI.vfil || "all")), j = UI.vjug || "";
+    return (m.ev || []).map((e) => ({ e, t: vtime(m, e) })).filter((x) => x.t != null && (!f[2] || f[2].indexOf(x.e.t) >= 0) && (!j || x.e.j === j)).sort((a, b) => a.t - b.t);
+  }
+  function vSyncHtml(m) {
+    const v = vivo(m), ini = m.video.ini || {}, sinT = (m.ev || []).filter((e) => vtime(m, e) == null).length;
+    const btns = [];
+    for (let p = 1; p <= v.P; p++) btns.push(`<button class="chip${ini[p] != null ? " on" : ""}" data-a="vini" data-p="${p}">P${p} ${ini[p] != null ? "· " + hms(ini[p]) : "· marcar"}</button>`);
+    return `<div class="card-h"><h2>Inicio de cada parte</h2></div>
+      <p class="muted" style="font-size:14px">Para el vídeo en el pitido inicial de cada parte y pulsa su botón. Las acciones que anotaste en directo se colocan solas en el vídeo.</p>
+      <div class="chips">${btns.join("")}</div>${sinT ? `<p class="note">${sinT} ${sinT === 1 ? "acción del directo espera" : "acciones del directo esperan"} a que marques el inicio de su parte.</p>` : ""}`;
+  }
+  function vJugHtml(m) {
+    const l = jugadas(m), pl = S.players.filter((p) => (m.ev || []).some((e) => e.j === p.id));
+    return `<div class="card-h"><h2>Jugadas</h2>${l.length ? `<button class="btn sm primary" data-a="vplay">${ic("play")} Ver seguidas (${l.length})</button>` : ""}</div>
+      <div class="chips">${VFIL.map((f) => `<button class="chip${(UI.vfil || "all") === f[0] ? " on" : ""}" data-a="vfil" data-v="${f[0]}">${f[1]}</button>`).join("")}</div>
+      ${pl.length ? `<select data-vj="1" aria-label="Filtrar por jugador"><option value="">Todos los jugadores</option>${pl.map((p) => `<option value="${p.id}"${UI.vjug === p.id ? " selected" : ""}>${p.dorsal} · ${esc(p.nombre)}</option>`).join("")}</select>` : ""}
+      ${l.length ? `<ul class="evlist">${l.map((x) => `<li><button class="link num" data-a="vgo" data-t="${x.t}">${hms(x.t)}</button><span class="${EVM[x.e.t].s}">${EVM[x.e.t].n}${x.e.j ? " · " + esc(pname(x.e.j)) : ""}${x.e.vt != null ? "" : ' <small class="muted">(directo)</small>'}</span><button class="iconbtn sm" data-a="evdel" data-id="${x.e.id}" aria-label="Borrar jugada">${ic("close")}</button></li>`).join("")}</ul>`
+        : `<p class="muted" style="font-size:14px">Todavía no hay jugadas con este filtro. Marca acciones con los botones de arriba mientras ves el vídeo.</p>`}`;
+  }
+  function vTagsHtml(m) {
+    const evBtn = (e) => `<button class="evb ${e[2]}${e[0] === "gol" ? " gol" : ""}" data-a="vev" data-v="${e[0]}">${e[1]}</button>`;
+    return `<div class="card-h"><h2>Marcar acción</h2><span class="muted num" id="vnow">${hms(UI.vcur || 0)}</span></div>
+      <div class="evgrid">${EVN.filter((e) => e[2] === "nos").map(evBtn).join("")}</div><div class="evgrid">${EVN.filter((e) => e[2] === "riv").map(evBtn).join("")}</div>`;
+  }
+  function vRefresh(m) {
+    const a = $("#vsync"), b = $("#vjug"), c = $("#vtags"), d = $("#vplaybar");
+    if (a) a.innerHTML = vSyncHtml(m);
+    if (b) b.innerHTML = vJugHtml(m);
+    if (c) c.innerHTML = vTagsHtml(m);
+    if (d) d.innerHTML = vPlaybar();
+  }
+  function vPlaybar() {
+    const P = UI.vplist;
+    if (!P) return "";
+    const x = P.list[P.i];
+    return `<div class="vbar"><span>Jugada ${P.i + 1} de ${P.list.length} · <b>${EVM[x.e.t].n}</b>${x.e.j ? " · " + esc(pname(x.e.j)) : ""}</span><button class="btn sm" data-a="vnext">Siguiente</button><button class="btn sm" data-a="vstop">Parar</button></div>`;
+  }
+  function vVideo(m) {
+    if (!m) { UI.page = null; return vPartidos(); }
+    vivo(m); m.video = m.video || { ini: {} }; m.video.ini = m.video.ini || {};
+    const loaded = UI.vid && UI.vid.mid === m.id;
+    const head = `<div class="pagebar"><button class="iconbtn" data-a="back" aria-label="Volver">${ic("back")}</button><h2>Vídeo del partido</h2></div>`;
+    if (!loaded) return head + `<section class="card"><h2>${esc(m.rival ? "Contra " + m.rival : "Partido")} · ${fFecha(m.fecha)}</h2>
+        <p>Elige el vídeo del partido o grábalo ahora. El vídeo no sale de tu móvil: la app solo guarda los momentos que marques.</p>
+        <label class="btn primary big" for="vidpick">Elegir vídeo de la galería</label><input type="file" id="vidpick" accept="video/*" class="sr" data-vid="1">
+        <label class="btn" for="vidrec">Grabar con la cámara</label><input type="file" id="vidrec" accept="video/*" capture="environment" class="sr" data-vid="1">
+        ${m.video.nombre ? `<p class="note">La última vez usaste <b>${esc(m.video.nombre)}</b>. Elige el mismo vídeo para recuperar tus jugadas.</p>` : ""}</section>
+      <section class="card"><h2>Consejos para grabar</h2><ul class="pts"><li>Móvil en un trípode, en alto y a la altura del medio campo, en horizontal.</li><li>Graba el partido entero en un solo vídeo. Si lo cortas en el descanso, revisa cada parte con su vídeo.</li><li>Con 720p es suficiente y ocupa menos. Lleva batería externa.</li><li>Si alguien anota el partido en directo con Míster, después solo tendrás que marcar el inicio de cada parte.</li></ul></section>`;
+    return head + `<div class="vwrap"><video id="vid" src="${UI.vid.url}" data-url="${UI.vid.url}" playsinline controls preload="metadata"></video></div>
+      <div id="vplaybar">${vPlaybar()}</div>
+      <div class="vctrl"><button data-a="vseek" data-d="-10">−10s</button><button data-a="vseek" data-d="-3">−3s</button><button class="play" data-a="vtoggle">${ic("play")}</button><button data-a="vseek" data-d="3">+3s</button><button data-a="vseek" data-d="10">+10s</button><button data-a="vrate" id="vrate">${UI.vrate || 1}×</button></div>
+      <section class="card" id="vtags">${vTagsHtml(m)}</section>
+      <section class="card" id="vsync">${vSyncHtml(m)}</section>
+      <section class="card" id="vjug">${vJugHtml(m)}</section>
+      <div class="row"><label class="btn" for="vidpick2">Cambiar de vídeo</label><input type="file" id="vidpick2" accept="video/*" class="sr" data-vid="1"><button class="btn" data-a="openM" data-id="${m.id}">Ver análisis del partido</button></div>`;
+  }
+  function vBind() {
+    const v = $("#vid");
+    if (!v || v.dataset.bound) return;
+    v.dataset.bound = "1";
+    v.playbackRate = UI.vrate || 1;
+    v.addEventListener("timeupdate", () => {
+      UI.vcur = v.currentTime;
+      const n = $("#vnow"); if (n) n.textContent = hms(v.currentTime);
+      const P = UI.vplist;
+      if (P && v.currentTime >= P.end) vPlayAt(P.i + 1);
+    });
+    const syncBtn = () => { const b = document.querySelector('[data-a="vtoggle"]'); if (b) b.innerHTML = ic(v.paused ? "play" : "pause"); };
+    v.addEventListener("play", syncBtn); v.addEventListener("pause", syncBtn);
+    v.addEventListener("loadedmetadata", () => { const m = curM(); if (m && m.video) { m.video.dur = Math.round(v.duration || 0); save(); } });
+  }
+  function vPlayAt(i) {
+    const P = UI.vplist, v = $("#vid");
+    if (!P || !v) return;
+    if (i >= P.list.length) { UI.vplist = null; v.pause(); vRefresh(curM()); toast("Fin de las jugadas"); return; }
+    P.i = i; const t = P.list[i].t;
+    v.currentTime = Math.max(0, t - (UI.vpre || 6)); P.end = t + (UI.vpost || 4);
+    v.play().catch(() => {});
+    const d = $("#vplaybar"); if (d) d.innerHTML = vPlaybar();
+  }
+
   /* ---------- hojas (modales) ---------- */
   function libCtx() {
     const a = avail(), t = S.team;
@@ -2538,7 +2646,8 @@ var FCF = (function () {
       const on = onField(m, e.p), rest = S.players.filter((p) => on.indexOf(p.id) < 0 && p.disp);
       const btn = (p) => `<button data-a="evjp" data-id="${p.id}"><span class="dorsal">${p.dorsal}</span>${esc(p.nombre)}</button>`;
       title = EVM[e.t].n + " · ¿quién?";
-      body = `<div class="attend big">${S.players.filter((p) => on.indexOf(p.id) >= 0).map(btn).join("")}</div>${rest.length ? `<details><summary>Otros jugadores</summary><div class="inner"><div class="attend">${rest.map(btn).join("")}</div></div></details>` : ""}<button class="btn" data-a="closeSheet">Sin asignar</button>`;
+      body = on.length ? `<div class="attend big">${S.players.filter((p) => on.indexOf(p.id) >= 0).map(btn).join("")}</div>${rest.length ? `<details><summary>Otros jugadores</summary><div class="inner"><div class="attend">${rest.map(btn).join("")}</div></div></details>` : ""}<button class="btn" data-a="closeSheet">Sin asignar</button>`
+        : `<div class="attend big">${S.players.filter((p) => p.disp).map(btn).join("")}</div><button class="btn" data-a="closeSheet">Sin asignar</button>`;
     } else if (sh.t === "cambio") {
       const m = curM(), v = m.vivo, on = onField(m, v.parte);
       const pool = sh.sale ? S.players.filter((p) => on.indexOf(p.id) < 0 && (p.disp)) : S.players.filter((p) => on.indexOf(p.id) >= 0);
@@ -2699,6 +2808,7 @@ var FCF = (function () {
       save(); UI.draft = null; UI.page = { t: "ses", id: s.id, from: UI.page && UI.page.from }; render(); window.scrollTo(0, 0); toast("Sesión guardada en tu calendario");
     },
     back: () => {
+      if (UI.page && UI.page.t === "video") { UI.vplist = null; const v = $("#vid"); if (v) v.pause(); }
       if (UI.page && UI.page.t === "mlive") { const lm = findM(UI.page.id); if (!(lm && lm.vivo && lm.vivo.run)) keepOn(false); }
       const m = curM();
       if (m && UI.page.t === "match" && !m.rival && !m.texto && !m.fallos.length && !m.gf && !m.gc && !(m.ev || []).length) S.partidos = S.partidos.filter((x) => x !== m), save();
@@ -2805,6 +2915,26 @@ var FCF = (function () {
         S.fcf = { link: d.link, partidos: d.partidos, clas: d.clas || [], ts: d.ts || Date.now() }; save(); UI.sheet = null; go("partidos"); toast("Calendario importado");
       } catch (e) { toast("El código no es válido. Cópialo entero."); }
     },
+    vopen: (d) => { UI.page = { t: "video", id: d.id, from: UI.page && UI.page.t === "match" ? UI.page : null }; UI.sheet = null; UI.vplist = null; render(); window.scrollTo(0, 0); },
+    vseek: (d) => { const v = $("#vid"); if (v) v.currentTime = Math.max(0, v.currentTime + Number(d.d)); },
+    vtoggle: () => { const v = $("#vid"); if (!v) return; if (v.paused) v.play().catch(() => {}); else v.pause(); },
+    vrate: () => { const r = [1, 0.5, 2][([1, 0.5, 2].indexOf(UI.vrate || 1) + 1) % 3]; UI.vrate = r; const v = $("#vid"); if (v) v.playbackRate = r; const b = $("#vrate"); if (b) b.textContent = r + "×"; },
+    vini: (d) => { const m = curM(), v = $("#vid"); if (!v) return; m.video.ini[d.p] = Math.round(v.currentTime); save(); render(); toast("Parte " + d.p + " empieza en el " + hms(v.currentTime)); },
+    vev: (d) => {
+      const m = curM(), v = $("#vid"); if (!v) return;
+      const vt = Math.round(v.currentTime * 10) / 10, ps = partFromVt(m, vt);
+      const e = { id: "e" + Date.now().toString(36) + Math.floor(Math.random() * 99), p: ps.p, s: ps.s, vt, t: d.v };
+      m.ev.push(e);
+      if (d.v === "gol" || d.v === "gol_r") syncScore(m);
+      m.lectura = lecturaStats(m); m.lectura.forEach((o) => { if (m.fallos.indexOf(o.c) < 0) m.fallos.push(o.c); });
+      buzz(30); save(); render();
+      if (EVM[d.v].j && S.players.length) openSheet({ t: "evj", id: e.id }); else toast(EVM[d.v].n + " · " + hms(vt));
+    },
+    vgo: (d) => { const v = $("#vid"); if (!v) return; UI.vplist = null; v.currentTime = Math.max(0, Number(d.t) - (UI.vpre || 6)); v.play().catch(() => {}); window.scrollTo({ top: 0, behavior: "smooth" }); const b = $("#vplaybar"); if (b) b.innerHTML = ""; },
+    vfil: (d) => { UI.vfil = d.v; render(); },
+    vplay: () => { const l = jugadas(curM()); if (!l.length) return; UI.vplist = { list: l, i: 0, end: 0 }; window.scrollTo({ top: 0, behavior: "smooth" }); vPlayAt(0); },
+    vnext: () => vPlayAt((UI.vplist ? UI.vplist.i : 0) + 1),
+    vstop: () => { UI.vplist = null; const v = $("#vid"); if (v) v.pause(); render(); },
     lopen: (d) => { const m = findM(d.id); vivo(m); save(); UI.page = { t: "mlive", id: d.id, from: UI.page && UI.page.t === "match" ? UI.page : null }; UI.sheet = null; render(); window.scrollTo(0, 0); if (!lvTick) lvTick = setInterval(liveClockTick, 500); },
     newLive: () => { ACT.newM(); const m = curM(); m.fecha = today(); m.rival = ""; ACT.lopen({ id: m.id }); UI.page.from = { t: "match", id: m.id }; },
     lfmt: (d) => { const m = curM(), v = vivo(m), f = d.v.split("x").map(Number); v.P = f[0]; v.M = f[1]; S.team.formato = f; save(); const y = window.scrollY; render(); window.scrollTo(0, y); },
@@ -2897,10 +3027,12 @@ var FCF = (function () {
   }
   function render() {
     let html;
-    if (UI.page) html = UI.page.t === "draft" ? vSession(UI.draft, true) : UI.page.t === "match" ? vMatch(findM(UI.page.id)) : UI.page.t === "mlive" ? vLive(findM(UI.page.id)) : vSession(findS(UI.page.id), false);
+    if (UI.page && UI.page.t === "video" && $("#vid") && UI.vid && $("#vid").dataset.url === UI.vid.url && UI.vid.mid === UI.page.id) { vRefresh(findM(UI.page.id)); renderNav(); renderSheet(); return; }
+    if (UI.page) html = UI.page.t === "draft" ? vSession(UI.draft, true) : UI.page.t === "match" ? vMatch(findM(UI.page.id)) : UI.page.t === "mlive" ? vLive(findM(UI.page.id)) : UI.page.t === "video" ? vVideo(findM(UI.page.id)) : vSession(findS(UI.page.id), false);
     else html = { inicio: vInicio, crear: vCrear, biblioteca: vBiblio, sesiones: vSesiones, partidos: vPartidos, equipo: vEquipo }[UI.tab]();
     $("#main").innerHTML = html;
     renderNav(); renderSheet();
+    if (UI.page && UI.page.t === "video") vBind();
   }
 
   document.addEventListener("click", (ev) => {
@@ -2913,6 +3045,17 @@ var FCF = (function () {
   });
   document.addEventListener("change", (ev) => {
     const el = ev.target, ds = el.dataset;
+    if (ds.vid && el.files && el.files[0]) {
+      const m = curM(), f = el.files[0];
+      if (UI.vid && UI.vid.url) { try { URL.revokeObjectURL(UI.vid.url); } catch (e) { /* nada */ } }
+      UI.vid = { mid: m.id, url: URL.createObjectURL(f) }; UI.vplist = null;
+      const otro = m.video && m.video.nombre && (m.video.nombre !== f.name || (m.video.tam && m.video.tam !== f.size));
+      m.video = Object.assign(m.video || { ini: {} }, { nombre: f.name, tam: f.size }); save();
+      $("#main").innerHTML = ""; render(); window.scrollTo(0, 0);
+      if (otro) toast("Es un vídeo distinto al anterior: revisa los inicios de parte");
+      return;
+    }
+    if (ds.vj) { UI.vjug = el.value; render(); return; }
     if (ds.f) { UI.form[ds.f] = el.value; }
     else if (ds.tf && ds.tf !== "modelo" && ds.tf !== "nombre") {
       S.team[ds.tf] = ds.tf === "cat" ? Number(el.value) : el.value; save(); UI.form = null; render();
