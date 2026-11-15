@@ -1731,7 +1731,7 @@ var FCF = (function () {
         pos: num(pick(o, /^(pos|posicio|posicion|lloc)/i)) || i + 1,
         nom: clean(pick(o, /nombre_equipo|nom_equip|^name$|teamname|equipo|equip|^nom|^nombre/i)),
         pts: num(pick(o, /punt|^pts|points/i)), pj: num(pick(o, /^pj$|jugat|jugad|played/i)),
-        gf: num(pick(o, /^gf$|goles_favor|gols_favor|favor/i)), gc: num(pick(o, /^gc$|goles_contra|gols_contra|contra/i))
+        gf: num(pick(o, /^gf$|goalsfor|goals_for|goles_favor|gols_favor|favor/i)), gc: num(pick(o, /^gc$|goalsagainst|goals_against|goles_contra|gols_contra|contra/i))
       };
     }).filter(function (r) { return r.nom; });
   }
@@ -1921,7 +1921,7 @@ var FCF = (function () {
     return prox + vUltimoM();
   }
   function vUltimoM() {
-    const m = sortedM()[0];
+    const m = sortedM().find(jugadoM);
     if (!m) return `<section class="card"><div class="card-h"><h2>Último partido</h2></div><p>Cuenta cómo fue el partido y prepara entrenamientos para corregir lo que falló.</p><div class="row"><button class="btn" data-a="newM">${ic("plus")} Registrar partido</button></div></section>`;
     const F = fallosOK(m), done = (m.sesiones || []).some(findS);
     return `<section class="card"><div class="card-h"><h2>Último partido</h2>${resChip(m)}</div>
@@ -2157,8 +2157,23 @@ var FCF = (function () {
   /* ---------- PARTIDOS ---------- */
   const VAL = ["", "Muy mal", "Mal", "Regular", "Bien", "Muy bien"];
   const resOf = (m) => (m.gf > m.gc ? "G" : m.gf < m.gc ? "P" : "E");
-  const resChip = (m) => `<span class="res r${resOf(m)}">${m.local ? m.gf + "-" + m.gc : m.gc + "-" + m.gf}</span>`;
-  const sortedM = () => S.partidos.slice().sort((a, b) => (a.fecha < b.fecha ? 1 : -1));
+  /* Marcador siempre desde nuestro punto de vista (goles a favor - en contra), igual que en el calendario FCF */
+  const resChip = (m) => (jugadoM(m) ? `<span class="res r${resOf(m)}">${m.gf}-${m.gc}</span>` : '<span class="tag">Pendiente</span>');
+  const sortedM = () => S.partidos.slice().sort((a, b) => (a.fecha + (a.hora || "") < b.fecha + (b.hora || "") ? 1 : -1));
+  let fxIdx = null, fxSig = "";
+  function fcfPorClave(k) {
+    const f = S.fcf, sig = f && f.link ? f.ts + ":" + (f.partidos || []).length : "";
+    if (sig !== fxSig) { fxSig = sig; fxIdx = {}; if (sig) fcfMine().forEach((p) => { fxIdx[fcfKey(p)] = p; }); }
+    return fxIdx[k];
+  }
+  /* ¿Se ha jugado ya? Manda la FCF si el partido está vinculado; si no, la fecha y lo anotado */
+  function jugadoM(m) {
+    if ((m.ev || []).length || (m.vivo && (m.vivo.fin || started(m.vivo)))) return true;
+    if (m.vivo && m.fecha >= today()) return false;
+    const p = m.fcf && fcfPorClave(m.fcf);
+    if (p) return !!p.jugado || (m.fecha < today() && (m.gf + m.gc > 0 || !!(m.texto || "").trim()));
+    return m.fecha <= today();
+  }
   const fallosOK = (m) => m.fallos.filter((c) => Analisis.entrenables(S.team.cat).indexOf(c) >= 0);
 
   function planSemana(m) {
@@ -2203,8 +2218,15 @@ var FCF = (function () {
     if (!silent) toast(nuevos.length ? "Detectado: " + nuevos.slice(0, 3).map((c) => CONT[c].n).join(", ") : "No he detectado nada concreto: marca abajo qué falló");
   }
 
+  function mItem(m) {
+    const d = parse(m.fecha);
+    return `<button class="item" data-a="openM" data-id="${m.id}"><span class="datebox"><b>${d.getDate()}</b><span>${MESES[d.getMonth()]}</span></span>
+      <span class="it"><h3>${m.local ? "" : "@ "}${esc(m.rival || "Sin rival")}</h3><span class="tags">${resChip(m)}${m.jornada ? `<span class="tag">J${m.jornada}</span>` : `<span class="tag">${esc(m.comp)}</span>`}${fallosOK(m).slice(0, 2).map((c) => `<span class="tag acc">${CONT[c].n}</span>`).join("")}${m.ejemplo ? '<span class="tag">Ejemplo</span>' : ""}</span></span></button>`;
+  }
   function vPartidos() {
-    const ms = sortedM();
+    const all = sortedM(), js = all.filter(jugadoM), prox = all.filter((m) => !jugadoM(m)).reverse();
+    /* El partido de ejemplo no cuenta en el balance cuando ya hay partidos reales */
+    const ms = js.some((m) => !m.ejemplo) ? js.filter((m) => !m.ejemplo) : js;
     const g = ms.filter((m) => resOf(m) === "G").length, e = ms.filter((m) => resOf(m) === "E").length, pp = ms.filter((m) => resOf(m) === "P").length;
     const gf = ms.reduce((a, m) => a + m.gf, 0), gc = ms.reduce((a, m) => a + m.gc, 0);
     return `<header class="top"><div><p class="eyebrow">Competición</p><h1>Partidos</h1></div><button class="btn primary sm" data-a="newM">${ic("plus")} Partido</button></header>
@@ -2212,9 +2234,9 @@ var FCF = (function () {
       <div class="grid2"><button class="btn primary" data-a="newLive">${ic("play")} Partido en directo</button><button class="btn" data-a="vpick">${ic("play")} Analizar vídeo</button></div>
       <section class="card"><p>Cuenta cómo ha ido el partido con tus palabras, por ejemplo «hemos fallado mucho en defensa». Míster detecta qué hay que mejorar y prepara los entrenamientos de la semana para corregirlo.</p>
         ${ms.length ? `<div class="stats" style="grid-template-columns:repeat(6,1fr)"><div class="stat"><b>${ms.length}</b><span>PJ</span></div><div class="stat"><b>${g}</b><span>G</span></div><div class="stat"><b>${e}</b><span>E</span></div><div class="stat"><b>${pp}</b><span>P</span></div><div class="stat"><b>${gf}</b><span>GF</span></div><div class="stat"><b>${gc}</b><span>GC</span></div></div>` : ""}</section>
-      <div class="list">${ms.length ? ms.map((m) => { const d = parse(m.fecha); return `<button class="item" data-a="openM" data-id="${m.id}"><span class="datebox"><b>${d.getDate()}</b><span>${MESES[d.getMonth()]}</span></span>
-        <span class="it"><h3>${m.local ? "" : "@ "}${esc(m.rival || "Sin rival")}</h3><span class="tags">${resChip(m)}<span class="tag">${esc(m.comp)}</span>${fallosOK(m).slice(0, 2).map((c) => `<span class="tag acc">${CONT[c].n}</span>`).join("")}${m.ejemplo ? '<span class="tag">Ejemplo</span>' : ""}</span></span></button>`; }).join("")
-        : `<div class="empty">Todavía no has registrado ningún partido.<button class="btn primary sm" data-a="newM">Registrar partido</button></div>`}</div>`;
+      ${prox.length ? `<p class="section-t">Próximos (${prox.length})</p><div class="list">${prox.map(mItem).join("")}</div>` : ""}
+      ${js.length ? `<p class="section-t">Jugados (${js.length})</p><div class="list">${js.map(mItem).join("")}</div>`
+        : prox.length ? "" : `<div class="list"><div class="empty">Todavía no has registrado ningún partido.<button class="btn primary sm" data-a="newM">Registrar partido</button></div></div>`}`;
   }
 
   function vMatchLive(m) {
@@ -2332,12 +2354,43 @@ var FCF = (function () {
   function fcfLoad(fn, then) { UI.fcfw = Object.assign(UI.fcfw || {}, { loading: true, err: null }); renderSheet(); fn().then(then, fcfFail); }
   function fcfApply(partidos, clas) {
     S.fcf.partidos = partidos; S.fcf.clas = clas; S.fcf.ts = Date.now();
-    /* Resultados oficiales en los partidos ya creados sin acciones anotadas */
-    partidos.filter((p) => p.jugado && esNuestro(p)).forEach((p) => {
-      const m = S.partidos.find((x) => x.fcf === fcfKey(p));
-      if (m && !(m.ev || []).length) { const c = enCasa(p); m.gf = c ? p.gl : p.gv; m.gc = c ? p.gv : p.gl; }
-    });
+    const n = fcfMatchRecords();
     save();
+    return n;
+  }
+  /* Cada partido jugado de la FCF pasa a la lista de Partidos (y a las estadísticas).
+     Si ya existía uno creado a mano ese fin de semana contra ese rival, se vincula en lugar de duplicarlo. */
+  const diasEntre = (a, b) => Math.abs(parse(a) - parse(b)) / 86400000;
+  function rivalCoincide(txt, p) {
+    const a = FCF.norm(txt), b = FCF.norm(rivalDe(p));
+    return a.length >= 4 && (b.indexOf(a) >= 0 || a.indexOf(b) >= 0);
+  }
+  function fcfMatchRecords() {
+    if (!S.fcf || !S.fcf.link) return 0;
+    const ign = S.fcf.ign || [];
+    let nuevos = 0;
+    fcfMine().forEach((p) => {
+      const key = fcfKey(p), c = enCasa(p);
+      let m = S.partidos.find((x) => x.fcf === key);
+      if (!m && p.fecha) {
+        m = S.partidos.find((x) => !x.fcf && x.fecha && ((x.fecha === p.fecha && !x.rival) || (diasEntre(x.fecha, p.fecha) <= 2 && rivalCoincide(x.rival, p))));
+        if (m) { m.fcf = key; m.jornada = p.j; m.ejemplo = false; m.rival = rivalDe(p); m.local = c; }
+      }
+      if (!m && p.jugado && ign.indexOf(key) < 0) {
+        m = { id: "m" + Date.now().toString(36) + "j" + p.j, fecha: p.fecha || today(), hora: p.hora, campo: p.campo, rival: rivalDe(p), local: c, comp: "Liga", gf: 0, gc: 0,
+          val: 3, texto: "", fallos: [], bien: [], flags: {}, sesiones: [], fcf: key, jornada: p.j };
+        S.partidos.push(m); nuevos++;
+      }
+      if (!m) return;
+      m.jornada = p.j;
+      if (!(m.ev || []).length) {
+        if (p.fecha) m.fecha = p.fecha;
+        if (p.hora) m.hora = p.hora;
+        if (p.campo) m.campo = p.campo;
+        if (p.jugado) { m.gf = c ? p.gl : p.gv; m.gc = c ? p.gv : p.gl; }
+      }
+    });
+    return nuevos;
   }
   function fcfSync() {
     const l = S.fcf && S.fcf.link; if (!l) return;
@@ -2356,7 +2409,7 @@ var FCF = (function () {
       const igual = eq.find((e) => e.codi === l.equipCodi) || eq.find((e) => FCF.norm(e.nom) === n);
       if (!igual) { UI.fcfw = { step: "equip", grup: grupId, grupNom: l.grup, compNom: l.comp, temp: l.temporada, partidos: ps, equips: eq, clas, url: d.url }; openSheet({ t: "fcf" }); toast("Vuelve a elegir tu equipo"); return; }
       l.equipCodi = igual.codi; l.equipNom = igual.nom;
-      S.fcf.link.url = d.url; fcfApply(ps, clas); toast("Calendario actualizado: " + fcfMine().length + " partidos de tu equipo");
+      S.fcf.link.url = d.url; const nu = fcfApply(ps, clas); toast("Calendario actualizado: " + fcfMine().length + " partidos de tu equipo" + (nu ? " · " + nu + " resultados nuevos" : ""));
       if (!UI.sheet) { const y = window.scrollY; render(); window.scrollTo(0, y); }
       return;
     }
@@ -2867,7 +2920,7 @@ var FCF = (function () {
         finalizar(m); keepOn(false); UI.sheet = null; render(); window.scrollTo(0, 0); toast("Partido terminado"); return;
       }
       if (d.v === "lfin") { const m = curM(); finalizar(m); keepOn(false); UI.sheet = null; UI.page = { t: "match", id: m.id }; render(); window.scrollTo(0, 0); toast("Partido terminado: revisa el análisis"); return; }
-      if (d.v === "delM") { const m = curM(); S.partidos = S.partidos.filter((x) => x !== m); save(); UI.page = null; toast("Partido borrado"); }
+      if (d.v === "delM") { const m = curM(); S.partidos = S.partidos.filter((x) => x !== m); if (m && m.fcf && S.fcf) { S.fcf.ign = (S.fcf.ign || []).concat(m.fcf); } save(); UI.page = null; toast("Partido borrado"); }
       if (d.v === "delS") { const s = cur(); S.sessions = S.sessions.filter((x) => x.id !== s.id); save(); UI.page = null; toast("Sesión borrada"); }
       if (d.v === "clearEj") { S.players = S.players.filter((p) => !p.ej); S.sessions = S.sessions.filter((s) => !s.ejemplo); S.partidos = S.partidos.filter((m) => !m.ejemplo); S.ejemplo = false; save(); UI.form = null; toast("Listo: empieza con tu equipo"); }
       if (d.v === "clearPl") { S.players = []; save(); UI.form = null; }
@@ -2927,7 +2980,7 @@ var FCF = (function () {
         const raw = $("#fcfcode").value.trim().replace(/^MISTER1\./, "");
         const d = JSON.parse(decodeURIComponent(escape(atob(raw))));
         if (!d.link || !Array.isArray(d.partidos)) throw new Error("x");
-        S.fcf = { link: d.link, partidos: d.partidos, clas: d.clas || [], ts: d.ts || Date.now() }; save(); UI.sheet = null; go("partidos"); toast("Calendario importado");
+        S.fcf = { link: d.link, partidos: [], clas: [], ts: Date.now() }; fcfApply(d.partidos, d.clas || []); S.fcf.ts = d.ts || S.fcf.ts; save(); UI.sheet = null; go("partidos"); toast("Calendario importado");
       } catch (e) { toast("El código no es válido. Cópialo entero."); }
     },
     vpick: () => openSheet({ t: "vpick" }),
@@ -3103,6 +3156,8 @@ var FCF = (function () {
     return false;
   };
 
+  /* Al abrir: los resultados FCF ya guardados también entran en la lista de Partidos */
+  if (S.fcf && S.fcf.link && (S.fcf.partidos || []).length) { fcfMatchRecords(); save(); }
   const h0 = location.hash.slice(1);
   if (TABS.indexOf(h0) >= 0) UI.tab = h0;
   render();
