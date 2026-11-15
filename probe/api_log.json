@@ -1,5 +1,25 @@
 [
  {
+  "tag": "solo UA",
+  "error": "<HTTPError 403: 'Forbidden'>"
+ },
+ {
+  "tag": "con Origin github",
+  "error": "<HTTPError 403: 'Forbidden'>"
+ },
+ {
+  "tag": "con Origin null",
+  "error": "<HTTPError 403: 'Forbidden'>"
+ },
+ {
+  "tag": "con Referer fcf",
+  "error": "<HTTPError 403: 'Forbidden'>"
+ },
+ {
+  "tag": "navegador completo",
+  "error": "<HTTPError 403: 'Forbidden'>"
+ },
+ {
   "path": "/api/competition/temporadas",
   "error": "<HTTPError 403: 'Forbidden'>"
  },
