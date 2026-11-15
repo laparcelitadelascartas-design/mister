@@ -1,0 +1,17 @@
+[
+ {
+  "path": "/api/competition/temporadas",
+  "error": "<HTTPError 403: 'Forbidden'>"
+ },
+ {
+  "path": "/api/competition/disciplines",
+  "error": "<HTTPError 403: 'Forbidden'>"
+ },
+ {
+  "path": "/api/search?q=sant%20ildefons&locale=ca",
+  "error": "<HTTPError 403: 'Forbidden'>"
+ },
+ {
+  "f7": null
+ }
+]
