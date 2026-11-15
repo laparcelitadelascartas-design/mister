@@ -2,7 +2,7 @@ name: Probe FCF
 on:
   push:
     branches: [fcf-probe]
-    paths: [tools/probe.py, .github/workflows/probe.yml]
+    paths: [tools/probe.py]
 permissions:
   contents: write
 jobs:
