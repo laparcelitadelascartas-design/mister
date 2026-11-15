@@ -310,6 +310,59 @@ details.card { border-top: 1px solid var(--line); padding-top: 16px; }
 details.card summary { font-family: var(--display); font-size: 18px; text-transform: uppercase; letter-spacing: .01em; color: var(--ink); }
 .pagebar .res { font-size: 17px; padding: 4px 10px; }
 
+/* Partido en directo */
+.card.hero.live { gap: 14px; }
+.ls-teams { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 10px; text-align: center; font-weight: 600; font-size: 15px; }
+.ls-teams span { overflow-wrap: anywhere; }
+.ls-score { font-family: var(--display); font-size: 54px; line-height: 1; white-space: nowrap; }
+.ls-clock { display: flex; align-items: baseline; justify-content: center; gap: 8px; font-family: var(--display); }
+.ls-clock span { font-size: 64px; line-height: 1; font-weight: 700; }
+.ls-clock small { font-family: var(--body); font-size: 14px; color: rgba(255, 255, 255, .8); }
+.ls-clock.over span { color: #ffd23f; }
+.hero .chip { background: rgba(255, 255, 255, .12); border-color: rgba(255, 255, 255, .25); color: #fff; }
+.hero .chip.on { background: #fff; color: var(--pitch); border-color: #fff; }
+.btn[disabled] { opacity: .45; }
+.evgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 6px; }
+.evb { position: relative; min-height: 60px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface-2); font-weight: 600; font-size: 14px; line-height: 1.15; padding: 6px; display: flex; align-items: center; justify-content: center; text-align: center; }
+.evb:active { transform: scale(.97); }
+.evb.gol { background: var(--i1); border-color: var(--i1); color: #fff; }
+.evb.riv { background: color-mix(in srgb, var(--i5) 12%, var(--surface)); border-color: color-mix(in srgb, var(--i5) 35%, var(--line)); }
+.evb i { position: absolute; top: 4px; right: 6px; font-style: normal; font-size: 12px; font-weight: 700; background: var(--ink); color: var(--bg); border-radius: 999px; min-width: 18px; height: 18px; display: grid; place-items: center; padding: 0 4px; }
+.evlist { list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-direction: column; }
+.evlist li { display: grid; grid-template-columns: 82px 1fr auto; align-items: center; gap: 8px; padding: 6px 0; border-top: 1px solid var(--line); font-size: 14.5px; }
+.evlist .riv { color: var(--i5); }
+.iconbtn.sm { width: 32px; height: 32px; }
+.iconbtn.sm svg { width: 16px; height: 16px; }
+.tbl { overflow-x: auto; margin: 0 -4px; }
+.stbl { width: 100%; border-collapse: collapse; font-size: 14px; font-variant-numeric: tabular-nums; }
+.stbl th, .stbl td { padding: 7px 6px; border-bottom: 1px solid var(--line); text-align: center; white-space: nowrap; }
+.stbl th[scope="row"] { text-align: left; font-weight: 600; }
+.stbl th[scope="row"] small { font-weight: 400; color: var(--muted); font-size: 11px; }
+.stbl thead th { font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+.dorsal.sm { width: 24px; height: 24px; font-size: 13px; display: inline-grid; vertical-align: middle; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+.attend.big { grid-template-columns: repeat(2, 1fr); }
+.attend.big button { min-height: 52px; font-size: 16px; }
+.attend button small { margin-left: auto; }
+.attend.campo button:not(.on) { text-decoration: none; opacity: .8; background: var(--surface-2); }
+
+/* Calendario FCF */
+.nextfx { background: var(--surface-2); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 6px; border-left: 4px solid var(--accent); }
+.nextfx .eyebrow { font-family: var(--display); font-size: 13px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--accent); }
+.nextfx h3 { font-size: 21px; }
+a.btn { text-decoration: none; color: inherit; }
+.fxlist { gap: 0 !important; }
+.fx { display: grid; grid-template-columns: 34px 1fr auto; grid-template-areas: "j d res" "j r res"; gap: 0 10px; align-items: center; text-align: left; background: none; border: 0; border-bottom: 1px solid var(--line); padding: 8px 2px; width: 100%; }
+.fx-j { grid-area: j; font-family: var(--display); font-weight: 700; color: var(--muted); }
+.fx-d { grid-area: d; font-size: 13px; color: var(--muted); }
+.fx-r { grid-area: r; font-weight: 600; }
+.fx .res, .fx .tag { grid-area: res; }
+.item.opt { justify-content: space-between; }
+.item.opt svg { width: 18px; height: 18px; flex: none; color: var(--muted); }
+.item.opt.hl { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.stbl tr.me th, .stbl tr.me td { background: var(--accent-soft); }
+.loading { padding: 20px 0; text-align: center; }
+
 </style>
 </head>
 <body>
@@ -1581,6 +1634,156 @@ var Pitch = (function () {
 })();
 
 /* =========================================================
+   MÍSTER · Calendario de la Federació Catalana de Futbol
+   Lee competiciones, grupos, partidos y clasificación de
+   www.fcf.cat. En la app de Android la consulta se hace desde
+   el propio móvil (puente nativo); en el navegador se intenta
+   directamente y, si no se puede, se avisa.
+   ========================================================= */
+var FCF = (function () {
+  "use strict";
+  var B = "https://www.fcf.cat", seq = 0, cbs = {};
+
+  window.__fcfCb = function (id, status, body) {
+    var c = cbs[id];
+    if (!c) return;
+    delete cbs[id];
+    if (status >= 200 && status < 300) {
+      try { c.ok(JSON.parse(body)); } catch (e) { c.ko(new Error("La FCF ha devuelto una respuesta que no se entiende.")); }
+    } else if (status) c.ko(new Error("La FCF ha respondido con un error (" + status + "). Prueba más tarde."));
+    else c.ko(new Error("No hay conexión con la FCF: " + (body || "revisa internet")));
+  };
+
+  function nativo() { return !!(window.AndroidApp && window.AndroidApp.httpGet); }
+
+  function get(path) {
+    if (nativo()) {
+      return new Promise(function (ok, ko) {
+        var id = String(++seq);
+        cbs[id] = { ok: ok, ko: ko };
+        try { window.AndroidApp.httpGet(id, B + path); } catch (e) { delete cbs[id]; ko(e); return; }
+        setTimeout(function () { if (cbs[id]) { delete cbs[id]; ko(new Error("La FCF tarda demasiado en responder.")); } }, 30000);
+      });
+    }
+    return fetch(B + path, { credentials: "omit" }).then(function (r) {
+      if (!r.ok) throw new Error("La FCF ha respondido con un error (" + r.status + ").");
+      return r.json();
+    }, function () {
+      var e = new Error("Desde el navegador la web de la FCF no deja leer su calendario. Vincula el equipo desde la app de Android o importa el código de calendario de un compañero.");
+      e.bloqueo = true;
+      throw e;
+    });
+  }
+
+  function arr(x) {
+    if (Array.isArray(x)) return x;
+    if (x && typeof x === "object") return x.value || x.result || x.data || x.items || [];
+    return [];
+  }
+  function opts(x) {
+    return arr(x).map(function (o) {
+      return { v: String(o.value != null ? o.value : o.id), l: String(o.label || o.nom || o.nombre || o.value || "").trim(), raw: o };
+    }).filter(function (o) { return o.v && o.l; });
+  }
+  function num(v) { if (v === null || v === undefined || v === "") return null; var n = Number(v); return isNaN(n) ? null : n; }
+  function clean(s) { return String(s == null ? "" : s).replace(/\s+/g, " ").trim(); }
+  function normDate(d) {
+    d = clean(d);
+    var m = d.match(/^(\d{2})[-/](\d{2})[-/](\d{4})/);
+    if (m) return m[3] + "-" + m[2] + "-" + m[1];
+    m = d.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    return m ? m[0] : "";
+  }
+
+  function temporadas() { return get("/api/competition/temporadas").then(opts); }
+  function disciplinas() { return get("/api/competition/disciplines").then(function (x) { return opts(x).filter(function (o) { return o.v !== "21081178"; }); }); }
+  function competicions(d, t) { return get("/api/competition/competicions?disciplinaId=" + encodeURIComponent(d) + "&temporada=" + encodeURIComponent(t)).then(opts); }
+  function grups(c, t) { return get("/api/competition/grupos?competicioId=" + encodeURIComponent(c) + "&temporada=" + encodeURIComponent(t)).then(opts); }
+
+  /* A partir de un enlace de fcf.cat (…/competicio/2026-2027/nom/grup-20/…) */
+  function resolver(url) {
+    var m = String(url || "").match(/competicio\/(\d{4}-\d{4})\/([^/?#]+)\/([^/?#]+)/);
+    if (!m) return Promise.reject(new Error("Ese enlace no es de una competición de fcf.cat. Abre tu grupo en la web de la FCF y copia la dirección."));
+    return get("/api/competition/resolve-slug?temporada=" + m[1] + "&competicioUrl=" + encodeURIComponent(m[2]) + "&grupoUrl=" + encodeURIComponent(m[3])).then(function (r) {
+      if (!r || !r.grupId) throw new Error("No he encontrado ese grupo en la FCF.");
+      return { grupId: String(r.grupId), temporada: String(r.temporadaId || ""), comp: clean(r.competicioNom), grup: clean(r.grupoNom), compId: String(r.competicioId || ""), temporadaNom: clean(r.temporadaNom) };
+    });
+  }
+
+  function partidos(g) {
+    return get("/api/competition/partidos?grupId=" + encodeURIComponent(g)).then(function (s) {
+      var a = (s && s.result && s.result.partidos) || (s && s.partidos) || s || {};
+      var fj = (s && s.result && s.result.fechasJornadas) || (s && s.fechasJornadas) || {};
+      var out = [];
+      Object.keys(a).forEach(function (j) {
+        var l = a[j];
+        if (!Array.isArray(l)) return;
+        l.forEach(function (p) {
+          var c = p.COMIENZO1 && p.COMIENZO1 !== "0000-00-00 00:00:00" ? String(p.COMIENZO1) : "";
+          var gl = num(p.GOLES_CASA), gv = num(p.GOLES_FUERA), est = String(p.ESTADO == null ? "" : p.ESTADO);
+          var cerrada = p.CERRADA === 1 || p.CERRADA === true || p.CERRADA === "1" || est === "1" || est === "6";
+          out.push({
+            j: Number(j), fecha: c ? c.slice(0, 10) : normDate(fj[j]), hora: c ? c.slice(11, 16) : "",
+            local: clean(p.NOMBRE_CASA), visit: clean(p.NOMBRE_FUERA), codL: String(p.CODEQUIPO_CASA || ""), codV: String(p.CODEQUIPO_FUERA || ""),
+            gl: gl, gv: gv, jugado: cerrada && est !== "2" && gl != null && gv != null, aplazado: est === "2" || est === "3",
+            campo: clean(p.CAMPO), lat: num(p.LATITUD), lng: num(p.LONGITUD)
+          });
+        });
+      });
+      return out.sort(function (x, y) { return x.j - y.j || ((x.fecha + x.hora) < (y.fecha + y.hora) ? -1 : 1); });
+    });
+  }
+
+  function equips(g, lista) {
+    var desdePartidos = function () {
+      var m = {};
+      (lista || []).forEach(function (p) { if (p.local) m[p.codL || p.local] = p.local; if (p.visit) m[p.codV || p.visit] = p.visit; });
+      return Object.keys(m).map(function (k) { return { codi: k, nom: m[k] }; });
+    };
+    return get("/api/competition/equipos?grupId=" + encodeURIComponent(g)).then(function (x) {
+      var l = arr(x).map(function (o) {
+        return { codi: String(o.codequipo || o.CODEQUIPO || o.teamId || o.value || o.id || ""), nom: clean(o.nombre_equipo || o.NOMBRE_EQUIPO || o.nombre || o.label || o.nom) };
+      }).filter(function (e) { return e.nom; });
+      return l.length ? l : desdePartidos();
+    }, desdePartidos);
+  }
+
+  /* Clasificación: se busca la primera lista de filas con nombre de equipo */
+  function classificacio(g) {
+    return get("/api/competition/classificacio?grupId=" + encodeURIComponent(g)).then(function (s) {
+      var rows = null;
+      (function walk(x, d) {
+        if (rows || d > 5 || !x || typeof x !== "object") return;
+        if (Array.isArray(x)) {
+          if (x.length && typeof x[0] === "object" && x[0] && Object.keys(x[0]).some(function (k) { return /nom|equip|team/i.test(k) && typeof x[0][k] === "string"; })) { rows = x; return; }
+          x.forEach(function (y) { walk(y, d + 1); });
+        } else Object.keys(x).forEach(function (k) { walk(x[k], d + 1); });
+      })(s, 0);
+      if (!rows) return [];
+      var pick = function (o, re) { var k = Object.keys(o).find(function (k) { return re.test(k); }); return k ? o[k] : ""; };
+      return rows.map(function (o, i) {
+        return {
+          pos: num(pick(o, /^(pos|posicio|posicion|lloc)/i)) || i + 1,
+          nom: clean(pick(o, /nombre_equipo|nom_equip|equipo|equip|^nom|team/i)),
+          pts: num(pick(o, /punt|^pts|points/i)), pj: num(pick(o, /^pj$|jugat|jugad|played/i)),
+          gf: num(pick(o, /^gf$|goles_favor|gols_favor|favor/i)), gc: num(pick(o, /^gc$|goles_contra|gols_contra|contra/i))
+        };
+      }).filter(function (r) { return r.nom; });
+    }).catch(function () { return []; });
+  }
+
+  /* Nombres de la FCF («CORNELLA, U.E. A») en formato legible */
+  function bonito(n) {
+    return clean(n).toLowerCase().split(" ").map(function (w) {
+      if (/\./.test(w) || /^[a-z]$/.test(w) || /^(ue|cf|fc|ce|ud|cd|ae|sad|ae|cfa|efb|pb|ad|at)[,]?$/.test(w)) return w.toUpperCase();
+      return w.charAt(0).toUpperCase() + w.slice(1);
+    }).join(" ");
+  }
+
+  return { nativo: nativo, temporadas: temporadas, disciplinas: disciplinas, competicions: competicions, grups: grups, resolver: resolver, partidos: partidos, equips: equips, classificacio: classificacio, bonito: bonito };
+})();
+
+/* =========================================================
    MÍSTER · Aplicación
    ========================================================= */
 (function () {
@@ -1661,6 +1864,7 @@ var Pitch = (function () {
   function lastMatchDay(dp) { for (let k = 0; k < 7; k++) { const f = addDays(today(), -k); if ((parse(f).getDay() + 6) % 7 === dp) return f; } return today(); }
   let S = load() || seed();
   if (!S.partidos) S.partidos = [];
+  if (S.fcf === undefined) S.fcf = null;
   if (!S.team.dias) { S.team.dias = [1, 3, 4]; S.team.diaPartido = 5; }
   function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { /* sin almacenamiento */ } }
   save();
@@ -1670,7 +1874,7 @@ var Pitch = (function () {
   const findS = (id) => S.sessions.find((s) => s.id === id);
   const findM = (id) => S.partidos.find((m) => m.id === id);
   const cur = () => (UI.page ? (UI.page.t === "draft" ? UI.draft : UI.page.t === "ses" ? findS(UI.page.id) : null) : null);
-  const curM = () => (UI.page && UI.page.t === "match" ? findM(UI.page.id) : null);
+  const curM = () => (UI.page && (UI.page.t === "match" || UI.page.t === "mlive") ? findM(UI.page.id) : null);
   const persist = () => { if (UI.page && UI.page.t === "ses") save(); };
   const avail = () => { const av = S.players.filter((p) => p.disp); const gk = av.filter((p) => p.pos === "POR").length; return { N: av.length - gk, gk: gk }; };
   function formDefaults(fecha) {
@@ -1747,6 +1951,11 @@ var Pitch = (function () {
   }
 
   function vUltimo() {
+    const nx = S.fcf && S.fcf.link ? fcfMine().find((p) => !p.jugado && p.fecha && p.fecha >= today()) : null;
+    const prox = nx ? `<section class="card"><div class="card-h"><h2>Próximo partido</h2><span class="tag">Jornada ${nx.j}</span></div><p><b>${enCasa(nx) ? "En casa" : "Fuera"} contra ${esc(rivalDe(nx))}</b><br><span class="muted">${fFecha(nx.fecha, true)}${nx.hora ? " · " + nx.hora : ""}</span></p><div class="row"><button class="btn primary" data-a="fcfPrep" data-k="${esc(fcfKey(nx))}">Preparar partido</button></div></section>` : "";
+    return prox + vUltimoM();
+  }
+  function vUltimoM() {
     const m = sortedM()[0];
     if (!m) return `<section class="card"><div class="card-h"><h2>Último partido</h2></div><p>Cuenta cómo fue el partido y prepara entrenamientos para corregir lo que falló.</p><div class="row"><button class="btn" data-a="newM">${ic("plus")} Registrar partido</button></div></section>`;
     const F = fallosOK(m), done = (m.sesiones || []).some(findS);
@@ -1963,6 +2172,12 @@ var Pitch = (function () {
         <div class="field"><div class="lbl">Días de entrenamiento</div><div class="chips">${DIAS.map((d, i) => `<button class="chip${t.dias.indexOf(i) >= 0 ? " on" : ""}" data-a="tdia" data-v="${i}" aria-pressed="${t.dias.indexOf(i) >= 0}">${d}</button>`).join("")}</div></div>
         <div class="field"><div class="lbl">Día de partido</div><div class="chips">${DIAS.map((d, i) => `<button class="chip${t.diaPartido === i ? " on" : ""}" data-a="tdp" data-v="${i}" aria-pressed="${t.diaPartido === i}">${d}</button>`).join("")}</div></div>
         <p class="muted" style="font-size:13px">Estos datos se usan por defecto al crear sesiones y para planificar la semana después de cada partido.</p></section>
+      <section class="card"><h2>Federació Catalana (FCF)</h2>
+        ${S.fcf && S.fcf.link ? `<p><b>${esc(FCF.bonito(S.fcf.link.equipNom))}</b><br><span class="muted" style="font-size:14px">${esc(S.fcf.link.comp)} · ${esc(S.fcf.link.grup)}</span></p>
+          <div class="row"><button class="btn" data-a="fcfSync">Actualizar</button><button class="btn" data-a="fcfOpen">Cambiar de equipo</button></div>
+          <div class="row"><button class="btn" data-a="fcfExport">Compartir calendario</button><button class="btn danger" data-a="fcfUnlink">Desvincular</button></div>`
+          : `<p class="muted" style="font-size:14px">Vincula el equipo para ver su calendario, resultados y clasificación.</p><div class="row"><button class="btn primary" data-a="fcfOpen">Vincular mi equipo</button><button class="btn" data-a="fcfImport">Tengo un código</button></div>`}
+        <div class="field"><div class="lbl">Formato de partido</div><div class="chips">${FORMATOS.map((f) => { const cur = t.formato || fmtDef(t.cat); return `<button class="chip${cur[0] === f[0] && cur[1] === f[1] ? " on" : ""}" data-a="tfmt" data-v="${f[0]}x${f[1]}">${f[0]} × ${f[1]}'</button>`; }).join("")}</div></div></section>
       <section class="card"><h2>Modelo de juego</h2><p class="muted" style="font-size:14px">Escribe un principio por línea. Aparecen en las sesiones de periodización táctica, juego de posición y entrenamiento estructurado.</p>
         <textarea data-tf="modelo" aria-label="Principios del modelo de juego">${esc(t.modelo || "")}</textarea></section>
       <section class="card"><div class="card-h"><h2>Plantilla</h2><span class="muted num">${a.N + a.gk} disponibles de ${S.players.length}</span></div>
@@ -2028,11 +2243,22 @@ var Pitch = (function () {
     const g = ms.filter((m) => resOf(m) === "G").length, e = ms.filter((m) => resOf(m) === "E").length, pp = ms.filter((m) => resOf(m) === "P").length;
     const gf = ms.reduce((a, m) => a + m.gf, 0), gc = ms.reduce((a, m) => a + m.gc, 0);
     return `<header class="top"><div><p class="eyebrow">Competición</p><h1>Partidos</h1></div><button class="btn primary sm" data-a="newM">${ic("plus")} Partido</button></header>
+      ${vFCF()}
+      <button class="btn big primary" data-a="newLive">${ic("play")} Empezar un partido en directo</button>
       <section class="card"><p>Cuenta cómo ha ido el partido con tus palabras, por ejemplo «hemos fallado mucho en defensa». Míster detecta qué hay que mejorar y prepara los entrenamientos de la semana para corregirlo.</p>
         ${ms.length ? `<div class="stats" style="grid-template-columns:repeat(6,1fr)"><div class="stat"><b>${ms.length}</b><span>PJ</span></div><div class="stat"><b>${g}</b><span>G</span></div><div class="stat"><b>${e}</b><span>E</span></div><div class="stat"><b>${pp}</b><span>P</span></div><div class="stat"><b>${gf}</b><span>GF</span></div><div class="stat"><b>${gc}</b><span>GC</span></div></div>` : ""}</section>
       <div class="list">${ms.length ? ms.map((m) => { const d = parse(m.fecha); return `<button class="item" data-a="openM" data-id="${m.id}"><span class="datebox"><b>${d.getDate()}</b><span>${MESES[d.getMonth()]}</span></span>
         <span class="it"><h3>${m.local ? "" : "@ "}${esc(m.rival || "Sin rival")}</h3><span class="tags">${resChip(m)}<span class="tag">${esc(m.comp)}</span>${fallosOK(m).slice(0, 2).map((c) => `<span class="tag acc">${CONT[c].n}</span>`).join("")}${m.ejemplo ? '<span class="tag">Ejemplo</span>' : ""}</span></span></button>`; }).join("")
         : `<div class="empty">Todavía no has registrado ningún partido.<button class="btn primary sm" data-a="newM">Registrar partido</button></div>`}</div>`;
+  }
+
+  function vMatchLive(m) {
+    const hay = m.vivo && ((m.ev || []).length || started(m.vivo));
+    if (!hay) return `<section class="card"><div class="card-h"><h2>Partido en directo</h2></div><p class="muted" style="font-size:14px">Cronómetro por partes y registro de acciones: chutes, pérdidas, recuperaciones, córners, minutos de cada jugador…</p><button class="btn primary" data-a="lopen" data-id="${m.id}">${ic("play")} Abrir marcador en directo</button></section>`;
+    const k = (t) => contar(m, t);
+    return `<section class="card"><div class="card-h"><h2>Estadísticas</h2><button class="btn sm" data-a="lopen" data-id="${m.id}">${m.vivo.fin ? "Ver detalle" : "Volver al directo"}</button></div>
+      <div class="stats"><div class="stat"><b>${k(["gol", "tiro_p", "tiro_f"])}</b><span>Tiros</span></div><div class="stat"><b>${k(["perdida"])}</b><span>Pérdidas</span></div><div class="stat"><b>${k(["recup"])}</b><span>Recuperaciones</span></div><div class="stat"><b>${k(["gol_r", "tiro_r", "tiro_rf"])}</b><span>Tiros rival</span></div></div>
+      ${(m.lectura || []).length ? `<div class="kv"><b>Lectura de las estadísticas</b><ul class="pts">${m.lectura.map((o) => `<li>${esc(o.txt)}</li>`).join("")}</ul></div>` : ""}</section>`;
   }
 
   function vMatch(m) {
@@ -2054,6 +2280,7 @@ var Pitch = (function () {
         <div class="chips">${["Liga", "Copa", "Amistoso", "Torneo"].map((c) => `<button class="chip${m.comp === c ? " on" : ""}" data-a="mset" data-k="comp" data-v="${c}">${c}</button>`).join("")}</div>
         <div class="score-grid">${m.local ? side(us, "gf") : side(them, "gc")}<span class="score-sep">–</span>${m.local ? side(them, "gc") : side(us, "gf")}</div>
       </section>
+      ${vMatchLive(m)}
       <section class="card"><h2>¿Cómo ha ido?</h2>
         <div class="chips">${[1, 2, 3, 4, 5].map((v) => `<button class="chip${m.val === v ? " on" : ""}" data-a="mset" data-k="val" data-v="${v}">${VAL[v]}</button>`).join("")}</div>
         <textarea data-mf="texto" aria-label="Descripción del partido" placeholder="Escríbelo como se lo contarías a tu segundo. Ej.: hemos fallado mucho en defensa, nos han marcado dos goles de córner y en la segunda parte nos ha faltado físico.">${esc(m.texto)}</textarea>
@@ -2071,6 +2298,241 @@ var Pitch = (function () {
       </section>` : `<p class="note">Escribe cómo ha ido y pulsa «Analizar», o marca directamente qué hay que mejorar.</p>`}
       ${linked.length ? `<p class="section-t">Entrenamientos de este partido</p><div class="list">${linked.map(sesItem).join("")}</div>` : ""}
       <button class="btn danger" data-a="ask" data-v="delM">Borrar partido</button>`;
+  }
+
+  /* ---------- CALENDARIO FCF ---------- */
+  const fcfKey = (p) => (S.fcf && S.fcf.link ? S.fcf.link.grupId : "g") + "-" + p.j + "-" + (p.codL || p.local) + "-" + (p.codV || p.visit);
+  const esNuestro = (p) => { const l = S.fcf && S.fcf.link; if (!l) return false; return l.equipCodi && (p.codL === l.equipCodi || p.codV === l.equipCodi) || p.local === l.equipNom || p.visit === l.equipNom; };
+  const enCasa = (p) => { const l = S.fcf.link; return (l.equipCodi && p.codL === l.equipCodi) || p.local === l.equipNom; };
+  const fcfMine = () => ((S.fcf && S.fcf.partidos) || []).filter(esNuestro);
+  const rivalDe = (p) => FCF.bonito(enCasa(p) ? p.visit : p.local);
+  const catDeComp = (l) => { l = (l || "").toUpperCase(); return /PREBENJ/.test(l) ? 0 : /BENJAM/.test(l) ? 1 : /ALEV/.test(l) ? 2 : /INFANTIL/.test(l) ? 3 : /CADET/.test(l) ? 4 : /JUVENIL/.test(l) ? 5 : 6; };
+  const hace = (ts) => { const m = Math.round((Date.now() - ts) / 60000); return m < 1 ? "ahora mismo" : m < 60 ? "hace " + m + " min" : m < 1440 ? "hace " + Math.round(m / 60) + " h" : "hace " + Math.round(m / 1440) + " días"; };
+  function gcalUrl(p) {
+    const ini = (p.fecha + "T" + (p.hora || "10:00")).replace(/[-:]/g, "") + "00";
+    const d = new Date(p.fecha + "T" + (p.hora || "10:00") + ":00"); d.setMinutes(d.getMinutes() + 75);
+    const fin = iso(d).replace(/-/g, "") + "T" + String(d.getHours()).padStart(2, "0") + String(d.getMinutes()).padStart(2, "0") + "00";
+    const txt = FCF.bonito(p.local) + " - " + FCF.bonito(p.visit);
+    return "https://calendar.google.com/calendar/render?action=TEMPLATE&text=" + encodeURIComponent(txt) + "&dates=" + ini + "/" + fin + "&ctz=Europe/Madrid&location=" + encodeURIComponent(p.campo || "") + "&details=" + encodeURIComponent("Jornada " + p.j + " · " + (S.fcf.link.comp || "") + " " + (S.fcf.link.grup || ""));
+  }
+  const mapsUrl = (p) => "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(p.lat && p.lng ? p.lat + "," + p.lng : p.campo);
+  function fixtureRow(p) {
+    const casa = enCasa(p), res = p.jugado ? (casa ? p.gl + "-" + p.gv : p.gv + "-" + p.gl) : "";
+    const r = p.jugado ? ((casa ? p.gl - p.gv : p.gv - p.gl) > 0 ? "G" : (casa ? p.gl - p.gv : p.gv - p.gl) < 0 ? "P" : "E") : "";
+    return `<button class="fx" data-a="fcfPrep" data-k="${esc(fcfKey(p))}"><span class="fx-j num">J${p.j}</span><span class="fx-d">${p.fecha ? fFecha(p.fecha) : "Sin fecha"}${p.hora ? " · " + p.hora : ""}</span>
+      <span class="fx-r">${casa ? "" : "@ "}${esc(rivalDe(p))}</span>${res ? `<span class="res r${r}">${res}</span>` : p.aplazado ? '<span class="tag">Aplazado</span>' : ""}</button>`;
+  }
+  function vFCF() {
+    const f = S.fcf;
+    if (!f || !f.link) return `<section class="card"><div class="card-h"><h2>Calendario FCF</h2></div><p class="muted" style="font-size:14px">Vincula tu equipo de la Federació Catalana de Futbol: verás los próximos partidos, los resultados y la clasificación, y podrás preparar cada partido con un toque.</p>
+      <div class="row"><button class="btn primary" data-a="fcfOpen">Vincular mi equipo</button><button class="btn" data-a="fcfImport">Tengo un código</button></div></section>`;
+    const mine = fcfMine(), next = mine.find((p) => !p.jugado && p.fecha && p.fecha >= today());
+    const rest = mine.filter((p) => p !== next);
+    const prox = rest.filter((p) => !p.jugado), hechos = rest.filter((p) => p.jugado).reverse();
+    return `<section class="card"><div class="card-h"><h2>Calendario FCF</h2><button class="btn sm" data-a="fcfSync">Actualizar</button></div>
+      <p><b>${esc(FCF.bonito(f.link.equipNom))}</b><br><span class="muted" style="font-size:14px">${esc(f.link.comp)} · ${esc(f.link.grup)}</span></p>
+      ${next ? `<div class="nextfx"><p class="eyebrow">Próximo partido · Jornada ${next.j}</p><h3>${enCasa(next) ? "En casa" : "Fuera"} contra ${esc(rivalDe(next))}</h3>
+        <p>${next.fecha ? fFecha(next.fecha, true) : "Fecha por confirmar"}${next.hora ? " · " + next.hora : ""}</p>${next.campo ? `<p class="muted" style="font-size:14px">${esc(next.campo)}</p>` : ""}
+        <div class="row"><button class="btn primary" data-a="fcfPrep" data-k="${esc(fcfKey(next))}">Preparar partido</button><a class="btn" href="${gcalUrl(next)}" target="_blank" rel="noopener">Añadir al calendario</a>${next.campo || next.lat ? `<a class="btn" href="${mapsUrl(next)}" target="_blank" rel="noopener">Cómo llegar</a>` : ""}</div></div>` : `<p class="note">No hay partidos pendientes en el calendario.</p>`}
+      ${prox.length ? `<details><summary>Próximas jornadas (${prox.length})</summary><div class="inner fxlist">${prox.map(fixtureRow).join("")}</div></details>` : ""}
+      ${hechos.length ? `<details><summary>Resultados (${hechos.length})</summary><div class="inner fxlist">${hechos.map(fixtureRow).join("")}</div></details>` : ""}
+      <div class="row"><button class="btn sm" data-a="fcfClas">Clasificación</button><span class="muted" style="font-size:13px">Actualizado ${hace(f.ts)}</span></div></section>`;
+  }
+  function fcfSheet() {
+    const w = UI.fcfw || { step: "inicio" };
+    const lista = (items, action, sel, filtro) => {
+      const q = (w.q || "").toLowerCase();
+      const l = items.filter((o) => !q || o.l.toLowerCase().indexOf(q) >= 0);
+      return `${filtro ? `<input type="text" id="fcfq" value="${esc(w.q || "")}" placeholder="Filtrar…" aria-label="Filtrar">` : ""}
+        <div class="list" id="fcflist">${l.map((o) => `<button class="item opt${sel && sel(o) ? " hl" : ""}" data-a="${action}" data-v="${esc(o.v)}"><span class="it"><b>${esc(o.l)}</b>${o.sub ? `<span class="muted" style="font-size:13px">${esc(o.sub)}</span>` : ""}</span>${ic("next")}</button>`).join("") || '<p class="muted">Sin resultados.</p>'}</div>`;
+    };
+    if (w.err) return `<p class="note warn">${esc(w.err)}</p>${w.bloqueo ? "" : `<button class="btn" data-a="fcfOpen">Volver a empezar</button>`}`;
+    if (w.loading) return `<p class="muted loading">Consultando la FCF…</p>`;
+    if (w.step === "inicio") return `<p>Elige tu equipo paso a paso o pega el enlace de tu grupo en <b>fcf.cat</b>.</p>
+      <button class="btn primary big" data-a="fcfStart">Buscar mi competición</button>
+      <div class="field"><label for="fcfurl">O pega el enlace del grupo</label><input type="text" id="fcfurl" placeholder="https://www.fcf.cat/ca/competicio/2026-2027/…/grup-20" inputmode="url">
+      <button class="btn" data-a="fcfUrl">Usar este enlace</button></div>`;
+    if (w.step === "disc") return `<p class="muted">Temporada ${esc(w.tempNom)} · ¿Qué modalidad?</p>` + lista(w.discs, "fcfDisc");
+    if (w.step === "comp") return `<p class="muted">${esc(w.discNom)} · Elige la competición</p>` + lista(w.comps, "fcfComp", null, true);
+    if (w.step === "grup") return `<p class="muted">${esc(w.compNom)} · Elige el grupo</p>` + lista(w.grups, "fcfGrup", null, w.grups.length > 8);
+    if (w.step === "equip") {
+      const club = (S.team.nombre || "").toUpperCase().replace(/^(UE|CF|FC|CE|UD|CD)\s+/, "").split(" ")[0];
+      return `<p class="muted">${esc(w.compNom)} · ${esc(w.grupNom)} · ¿Cuál es tu equipo?</p>` + lista(w.equips.map((e) => ({ v: e.codi, l: FCF.bonito(e.nom) })).sort((a, b) => a.l.localeCompare(b.l)), "fcfEquip", (o) => club && o.l.toUpperCase().indexOf(club) >= 0);
+    }
+    return "";
+  }
+  function fcfFail(e) { UI.fcfw = Object.assign(UI.fcfw || {}, { loading: false, err: e.message || String(e), bloqueo: !!e.bloqueo }); renderSheet(); }
+  function fcfStep(patch) { UI.fcfw = Object.assign(UI.fcfw || {}, { loading: false, err: null, q: "" }, patch); if (UI.sheet && UI.sheet.t === "fcf") renderSheet(); }
+  function fcfLoad(fn, then) { UI.fcfw = Object.assign(UI.fcfw || {}, { loading: true, err: null }); renderSheet(); fn().then(then, fcfFail); }
+  function fcfApply(partidos, clas) {
+    S.fcf.partidos = partidos; S.fcf.clas = clas; S.fcf.ts = Date.now();
+    /* Resultados oficiales en los partidos ya creados sin acciones anotadas */
+    partidos.filter((p) => p.jugado && esNuestro(p)).forEach((p) => {
+      const m = S.partidos.find((x) => x.fcf === fcfKey(p));
+      if (m && !(m.ev || []).length) { const c = enCasa(p); m.gf = c ? p.gl : p.gv; m.gc = c ? p.gv : p.gl; }
+    });
+    save();
+  }
+  function fcfSync(silent) {
+    const l = S.fcf && S.fcf.link; if (!l) return Promise.resolve();
+    return Promise.all([FCF.partidos(l.grupId), FCF.classificacio(l.grupId)]).then((r) => {
+      fcfApply(r[0], r[1]);
+      if (!silent) toast("Calendario actualizado");
+      if (!UI.sheet && (UI.tab === "partidos" || UI.tab === "inicio") && !UI.page) { const y = window.scrollY; render(); window.scrollTo(0, y); }
+    }, (e) => { if (!silent) toast(e.message); });
+  }
+
+  /* ---------- PARTIDO EN DIRECTO ---------- */
+  const FORMATOS = [[4, 12], [4, 10], [4, 15], [2, 25], [2, 30], [2, 35], [2, 40], [2, 45]];
+  const fmtDef = (cat) => (cat <= 2 ? [4, 12] : cat === 3 ? [2, 35] : cat === 4 ? [2, 40] : [2, 45]);
+  const EVN = [
+    ["gol", "Gol", "nos", true], ["tiro_p", "Tiro a puerta", "nos", true], ["tiro_f", "Tiro fuera", "nos", true],
+    ["ocasion", "Ocasión clara", "nos", true], ["perdida", "Pérdida", "nos", true], ["recup", "Recuperación", "nos", true],
+    ["corner", "Córner a favor", "nos", false], ["falta_r", "Falta recibida", "nos", true], ["falta_c", "Falta cometida", "nos", true],
+    ["parada", "Parada", "nos", true], ["amarilla", "Amarilla", "nos", true], ["roja", "Roja", "nos", true],
+    ["gol_r", "Gol rival", "riv", false], ["tiro_r", "Tiro rival a puerta", "riv", false], ["tiro_rf", "Tiro rival fuera", "riv", false], ["corner_r", "Córner en contra", "riv", false]
+  ];
+  const EVM = {};
+  EVN.forEach((e) => { EVM[e[0]] = { n: e[1], s: e[2], j: e[3] }; });
+  const STATS = [["Goles", ["gol"], ["gol_r"]], ["Tiros a puerta", ["gol", "tiro_p"], ["gol_r", "tiro_r"]], ["Tiros fuera", ["tiro_f"], ["tiro_rf"]],
+    ["Ocasiones claras", ["ocasion"], null], ["Pérdidas", ["perdida"], null], ["Recuperaciones", ["recup"], null], ["Córners", ["corner"], ["corner_r"]],
+    ["Faltas cometidas", ["falta_c"], null], ["Faltas recibidas", ["falta_r"], null], ["Paradas", ["parada"], null], ["Tarjetas", ["amarilla", "roja"], null]];
+  let lvTick = null;
+
+  function vivo(m) {
+    if (!m.vivo) {
+      const fm = S.team.formato || fmtDef(S.team.cat);
+      m.vivo = { P: fm[0], M: fm[1], parte: 1, run: false, t0: 0, acum: 0, durs: [], fin: false, campo: {}, aviso: {} };
+    }
+    m.ev = m.ev || []; m.cambios = m.cambios || [];
+    return m.vivo;
+  }
+  const elapsed = (v) => v.acum + (v.run ? Date.now() - v.t0 : 0);
+  const mmssS = (sec) => String(Math.floor(sec / 60)).padStart(2, "0") + ":" + String(Math.floor(sec % 60)).padStart(2, "0");
+  const started = (v) => v.parte > 1 || v.acum > 0 || v.run || v.fin;
+  const contar = (m, tipos, parte) => (m.ev || []).filter((e) => tipos.indexOf(e.t) >= 0 && (parte == null || e.p === parte)).length;
+  const syncScore = (m) => { m.gf = contar(m, ["gol"]); m.gc = contar(m, ["gol_r"]); };
+  const pname = (id) => { const p = S.players.find((x) => x.id === id); return p ? p.nombre : "—"; };
+  function onField(m, p) {
+    let on = ((m.vivo.campo[p]) || []).slice();
+    m.cambios.filter((c) => c.p === p).sort((a, b) => a.s - b.s).forEach((c) => { on = on.filter((x) => x !== c.sale); if (c.entra && on.indexOf(c.entra) < 0) on.push(c.entra); });
+    return on;
+  }
+  function minutos(m) {
+    const v = m.vivo, out = {}, partes = {};
+    if (!v) return { seg: out, partes };
+    for (let p = 1; p <= v.P; p++) {
+      const dur = p < v.parte || v.fin ? (v.durs[p - 1] || 0) : p === v.parte ? elapsed(v) : 0;
+      const on = {};
+      (v.campo[p] || []).forEach((id) => { on[id] = 0; });
+      if (!dur && !(v.campo[p] || []).length) continue;
+      const end = dur / 1000;
+      m.cambios.filter((c) => c.p === p).sort((a, b) => a.s - b.s).forEach((c) => {
+        if (c.sale in on) { out[c.sale] = (out[c.sale] || 0) + (c.s - on[c.sale]); (partes[c.sale] = partes[c.sale] || {})[p] = 1; delete on[c.sale]; }
+        if (c.entra) on[c.entra] = c.s;
+      });
+      Object.keys(on).forEach((id) => { out[id] = (out[id] || 0) + Math.max(0, end - on[id]); if (dur) (partes[id] = partes[id] || {})[p] = 1; });
+    }
+    return { seg: out, partes };
+  }
+  function lecturaStats(m) {
+    const v = m.vivo;
+    if (!v || !(m.ev || []).length) return [];
+    const k = (t, p) => contar(m, t, p), ent = Analisis.entrenables(S.team.cat), out = [];
+    const add = (c, txt) => { if (ent.indexOf(c) >= 0 && !out.some((o) => o.c === c)) out.push({ c, txt }); };
+    const tiros = k(["gol", "tiro_p", "tiro_f"]), aPuerta = k(["gol", "tiro_p"]), perd = k(["perdida"]), rec = k(["recup"]);
+    const tirosR = k(["gol_r", "tiro_r", "tiro_rf"]);
+    if (perd >= 8 && perd > rec * 1.5) add("pase", perd + " pérdidas de balón y " + rec + " recuperaciones: hay que cuidar más el pase y la conservación.");
+    if (tiros <= 3) add("llegada", "Solo " + tiros + (tiros === 1 ? " tiro" : " tiros") + " en todo el partido: cuesta llegar al área.");
+    else if (aPuerta / tiros < 0.45) add("tiro", (tiros - aPuerta) + " de " + tiros + " tiros han ido fuera: falta precisión al finalizar.");
+    if (k(["ocasion"]) >= 3 && k(["gol"]) < k(["ocasion"]) / 2) add("tiro", k(["ocasion"]) + " ocasiones claras y " + k(["gol"]) + " goles: falta acierto.");
+    if (k(["gol_r"]) >= 3 || tirosR >= 8) add("bloque", "El rival ha tirado " + tirosR + " veces y ha marcado " + k(["gol_r"]) + ": hay que defender más juntos.");
+    if (k(["corner_r"]) >= 5) add("area", k(["corner_r"]) + " córners en contra: trabajar la defensa del área y el balón parado.");
+    if (rec <= 4 && tirosR >= 4) add("tras_perdida", "Solo " + rec + " recuperaciones: hay que reaccionar antes al perder el balón.");
+    if (k(["falta_c"]) >= 6) add("defensa1", k(["falta_c"]) + " faltas cometidas: mejorar el 1v1 defensivo sin hacer falta.");
+    if (v.P >= 2) {
+      const mal = (p) => k(["perdida"], p) + 2 * k(["gol_r"], p);
+      const last = mal(v.P);
+      let otros = 0;
+      for (let p = 1; p < v.P; p++) otros += mal(p);
+      const media = otros / (v.P - 1);
+      if (last >= 4 && last > media * 1.5) add("resistencia", "En la " + v.P + "ª parte se acumulan pérdidas y goles en contra: posible falta de físico o de concentración al final.");
+    }
+    return out;
+  }
+  function finalizar(m) {
+    const v = vivo(m);
+    if (!v.fin) { if (v.run || v.acum) v.durs[v.parte - 1] = elapsed(v); v.run = false; v.acum = 0; v.fin = true; }
+    syncScore(m);
+    m.lectura = lecturaStats(m);
+    m.lectura.forEach((o) => { if (m.fallos.indexOf(o.c) < 0) m.fallos.push(o.c); });
+    save();
+  }
+  function statsTable(m, P) {
+    const cols = [];
+    for (let p = 1; p <= P; p++) cols.push(p);
+    const cell = (r, p) => { const a = contar(m, r[1], p); return r[2] ? a + "–" + contar(m, r[2], p) : String(a); };
+    return `<div class="tbl"><table class="stbl"><thead><tr><th scope="col"><span class="sr">Acción</span></th>${cols.map((p) => `<th scope="col">P${p}</th>`).join("")}<th scope="col">Total</th></tr></thead><tbody>
+      ${STATS.map((r) => `<tr><th scope="row">${r[0]}${r[2] ? ' <small>nos–riv</small>' : ""}</th>${cols.map((p) => `<td>${cell(r, p)}</td>`).join("")}<td><b>${cell(r, null)}</b></td></tr>`).join("")}</tbody></table></div>`;
+  }
+  function playersTable(m) {
+    const mn = minutos(m), rows = S.players.filter((p) => mn.seg[p.id] > 0 || (m.ev || []).some((e) => e.j === p.id));
+    if (!rows.length) return '<p class="muted" style="font-size:14px">Marca quién está en el campo para contar los minutos de cada jugador.</p>';
+    const c = (id, t) => (m.ev || []).filter((e) => e.j === id && t.indexOf(e.t) >= 0).length || "";
+    return `<div class="tbl"><table class="stbl"><thead><tr><th scope="col">Jugador</th><th scope="col">Min</th><th scope="col">Partes</th><th scope="col">Gol</th><th scope="col">Tiros</th><th scope="col">Pér.</th><th scope="col">Rec.</th></tr></thead><tbody>
+      ${rows.sort((a, b) => (mn.seg[b.id] || 0) - (mn.seg[a.id] || 0)).map((p) => `<tr><th scope="row"><span class="dorsal sm">${p.dorsal}</span> ${esc(p.nombre)}</th><td>${Math.round((mn.seg[p.id] || 0) / 60)}</td><td>${Object.keys(mn.partes[p.id] || {}).length}</td><td>${c(p.id, ["gol"])}</td><td>${c(p.id, ["gol", "tiro_p", "tiro_f"])}</td><td>${c(p.id, ["perdida"])}</td><td>${c(p.id, ["recup"])}</td></tr>`).join("")}</tbody></table></div>`;
+  }
+
+  function vLive(m) {
+    if (!m) { UI.page = null; return vPartidos(); }
+    const v = vivo(m), t = S.team, el = elapsed(v), sec = Math.floor(el / 1000), over = sec >= v.M * 60;
+    const on = onField(m, v.parte), partEmpezada = el > 0 || v.run;
+    const pl = S.players.filter((p) => p.disp || on.indexOf(p.id) >= 0).sort((a, b) => a.dorsal - b.dorsal);
+    const mn = minutos(m);
+    const sinJugar = v.parte >= 3 && !v.fin ? pl.filter((p) => !(mn.seg[p.id] > 0) && on.indexOf(p.id) < 0 && p.pos !== "POR") : [];
+    const us = esc(t.nombre), them = esc(m.rival || "Rival");
+    const home = m.local ? us : them, away = m.local ? them : us, hg = m.local ? m.gf : m.gc, ag = m.local ? m.gc : m.gf;
+    const ult = (m.ev || []).slice(-8).reverse();
+    const evBtn = (e) => { const n = contar(m, [e[0]], v.parte); return `<button class="evb ${e[2]}${e[0] === "gol" ? " gol" : ""}" data-a="ev" data-v="${e[0]}">${n ? `<i>${n}</i>` : ""}${e[1]}</button>`; };
+    let ctrl;
+    if (v.fin) ctrl = `<p style="color:#fff;font-weight:600">Partido terminado</p>`;
+    else ctrl = `<div class="row"><button class="btn primary" data-a="lrun">${v.run ? ic("pause") + " Pausa" : ic("play") + (el > 0 ? " Seguir" : " Empezar parte " + v.parte)}</button>
+      <button class="btn" data-a="ask" data-v="lendP" ${el > 0 || v.run ? "" : "disabled"}>Fin de la parte ${v.parte}</button></div>`;
+    return `<div class="pagebar"><button class="iconbtn" data-a="back" aria-label="Volver">${ic("back")}</button><h2>En directo</h2>${v.run ? '<span class="tag acc">● En juego</span>' : ""}</div>
+      <section class="card hero live">
+        <div class="ls-teams"><span>${home}</span><b class="ls-score num">${hg} – ${ag}</b><span>${away}</span></div>
+        <div class="ls-clock${over ? " over" : ""}"><span id="lvclock" class="num">${mmssS(sec)}</span><small>${v.fin ? "Final" : " / " + v.M + ":00 · Parte " + v.parte + " de " + v.P}</small></div>
+        ${ctrl}
+        ${!started(v) ? `<div class="kv"><b style="color:rgba(255,255,255,.85)">Formato del partido</b><div class="chips">${FORMATOS.map((f) => `<button class="chip${v.P === f[0] && v.M === f[1] ? " on" : ""}" data-a="lfmt" data-v="${f[0]}x${f[1]}">${f[0]} × ${f[1]}'</button>`).join("")}</div></div>` : ""}
+      </section>
+      <section class="card"><div class="card-h"><h2>En el campo · parte ${v.parte}</h2><span class="tag">${on.length} jugadores</span></div>
+        <p class="muted" style="font-size:14px">${partEmpezada ? "Toca un jugador para hacer un cambio." : "Toca a los jugadores que empiezan esta parte."}</p>
+        ${pl.length ? `<div class="attend campo">${pl.map((p) => `<button class="${on.indexOf(p.id) >= 0 ? "on" : ""}" data-a="lj" data-id="${p.id}" aria-pressed="${on.indexOf(p.id) >= 0}"><span class="dorsal">${p.dorsal}</span>${esc(p.nombre)}<small class="muted">${mn.seg[p.id] ? Math.round(mn.seg[p.id] / 60) + "'" : ""}</small></button>`).join("")}</div>` : `<p class="muted">Añade jugadores en Equipo para contar sus minutos.</p>`}
+        ${sinJugar.length ? `<p class="note warn">Aún no han jugado: ${sinJugar.map((p) => esc(p.nombre)).join(", ")}.</p>` : ""}
+      </section>
+      <section class="card"><div class="card-h"><h2>Acciones</h2><button class="btn sm" data-a="lundo" ${(m.ev || []).length ? "" : "disabled"}>Deshacer</button></div>
+        <div class="sub-t">Nosotros</div><div class="evgrid">${EVN.filter((e) => e[2] === "nos").map(evBtn).join("")}</div>
+        <div class="sub-t">Rival</div><div class="evgrid">${EVN.filter((e) => e[2] === "riv").map(evBtn).join("")}</div>
+        ${ult.length ? `<ul class="evlist">${ult.map((e) => `<li><span class="num muted">P${e.p} · ${mmssS(e.s)}</span><span class="${EVM[e.t].s}">${EVM[e.t].n}${e.j ? " · " + esc(pname(e.j)) : ""}</span><button class="iconbtn sm" data-a="evdel" data-id="${e.id}" aria-label="Borrar acción">${ic("close")}</button></li>`).join("")}</ul>` : ""}
+      </section>
+      <section class="card"><h2>Estadísticas por partes</h2>${statsTable(m, v.P)}</section>
+      <section class="card"><h2>Jugadores</h2>${playersTable(m)}</section>
+      ${v.fin ? `<button class="btn primary big" data-a="openM" data-id="${m.id}">Ver el análisis del partido</button>` : `<button class="btn big" data-a="ask" data-v="lfin">Terminar el partido y analizar</button>`}`;
+  }
+  function liveClockTick() {
+    if (!(UI.page && UI.page.t === "mlive")) { clearInterval(lvTick); lvTick = null; return; }
+    const m = findM(UI.page.id); if (!m || !m.vivo) return;
+    const v = m.vivo, sec = Math.floor(elapsed(v) / 1000), el = $("#lvclock");
+    if (el) { el.textContent = mmssS(sec); el.parentNode.classList.toggle("over", sec >= v.M * 60); }
+    if (v.run && sec >= v.M * 60 && !v.aviso[v.parte]) {
+      v.aviso[v.parte] = 1; save();
+      beep(880, 0.3); setTimeout(() => beep(880, 0.3), 400); setTimeout(() => beep(880, 0.5), 800); buzz(800);
+      toast("Tiempo cumplido en la parte " + v.parte);
+    }
+  }
+  function keepOn(on) {
+    try { if (NATIVE && NATIVE.keepScreenOn) NATIVE.keepScreenOn(on); } catch (e) { /* nada */ }
+    try { if (on && navigator.wakeLock && !wake) navigator.wakeLock.request("screen").then((w) => { wake = w; }).catch(() => {}); if (!on && wake) { wake.release(); wake = null; } } catch (e) { /* nada */ }
   }
 
   /* ---------- hojas (modales) ---------- */
@@ -2101,8 +2563,33 @@ var Pitch = (function () {
     } else if (sh.t === "import") {
       title = "Importar datos";
       body = `<p class="muted">Pega aquí la copia exportada desde Míster. Sustituirá los datos actuales de este dispositivo.</p><textarea style="min-height:40vh" id="imptxt" aria-label="Datos para importar"></textarea><button class="btn primary" data-a="doImport">Importar</button>`;
+    } else if (sh.t === "fcf") {
+      title = "Vincular equipo FCF";
+      body = fcfSheet();
+    } else if (sh.t === "fcfClas") {
+      const c = (S.fcf && S.fcf.clas) || [];
+      title = "Clasificación";
+      body = c.length ? `<div class="tbl"><table class="stbl"><thead><tr><th scope="col">#</th><th scope="col">Equipo</th><th scope="col">Pts</th><th scope="col">PJ</th><th scope="col">GF</th><th scope="col">GC</th></tr></thead><tbody>${c.map((r) => `<tr class="${S.fcf.link && FCF.bonito(r.nom) === FCF.bonito(S.fcf.link.equipNom) ? "me" : ""}"><td>${r.pos}</td><th scope="row">${esc(FCF.bonito(r.nom))}</th><td><b>${r.pts == null ? "" : r.pts}</b></td><td>${r.pj == null ? "" : r.pj}</td><td>${r.gf == null ? "" : r.gf}</td><td>${r.gc == null ? "" : r.gc}</td></tr>`).join("")}</tbody></table></div>`
+        : `<p class="muted">Este grupo no tiene clasificación publicada (en muchas categorías de futbol base la FCF no la publica).</p>`;
+    } else if (sh.t === "fcfCode") {
+      title = sh.imp ? "Importar calendario" : "Compartir calendario";
+      body = sh.imp ? `<p class="muted">Pega el código que te ha pasado otro entrenador desde su app de Android.</p><textarea id="fcfcode" style="min-height:30vh" aria-label="Código de calendario"></textarea><button class="btn primary" data-a="fcfDoImport">Importar</button>`
+        : `<p class="muted">Pásale este código a otro entrenador (por ejemplo, por WhatsApp). En su app: Partidos → Tengo un código.</p><textarea style="min-height:30vh" readonly id="txtout">${esc(sh.code)}</textarea><button class="btn primary" data-a="copyOut">Copiar</button>`;
+    } else if (sh.t === "evj") {
+      const m = curM(), e = m && (m.ev || []).find((x) => x.id === sh.id);
+      if (!e) { UI.sheet = null; return; }
+      const on = onField(m, e.p), rest = S.players.filter((p) => on.indexOf(p.id) < 0 && p.disp);
+      const btn = (p) => `<button data-a="evjp" data-id="${p.id}"><span class="dorsal">${p.dorsal}</span>${esc(p.nombre)}</button>`;
+      title = EVM[e.t].n + " · ¿quién?";
+      body = `<div class="attend big">${S.players.filter((p) => on.indexOf(p.id) >= 0).map(btn).join("")}</div>${rest.length ? `<details><summary>Otros jugadores</summary><div class="inner"><div class="attend">${rest.map(btn).join("")}</div></div></details>` : ""}<button class="btn" data-a="closeSheet">Sin asignar</button>`;
+    } else if (sh.t === "cambio") {
+      const m = curM(), v = m.vivo, on = onField(m, v.parte);
+      const pool = sh.sale ? S.players.filter((p) => on.indexOf(p.id) < 0 && (p.disp)) : S.players.filter((p) => on.indexOf(p.id) >= 0);
+      title = sh.sale ? "Sale " + pname(sh.sale) + " · ¿quién entra?" : "Entra " + pname(sh.entra) + " · ¿quién sale?";
+      body = `<div class="attend big">${pool.map((p) => `<button data-a="cambioOk" data-id="${p.id}"><span class="dorsal">${p.dorsal}</span>${esc(p.nombre)}</button>`).join("") || '<p class="muted">No hay jugadores disponibles.</p>'}</div>
+        ${sh.sale ? `<button class="btn" data-a="cambioOk" data-id="">Sale sin sustituto</button>` : ""}`;
     } else if (sh.t === "ask") {
-      const Q = { delS: ["¿Borrar esta sesión?", "No se puede deshacer.", "Borrar sesión"], clearEj: ["¿Empezar de cero?", "Se borran la plantilla, el partido y las sesiones de ejemplo. Tus datos se mantienen.", "Borrar ejemplos"], delM: ["¿Borrar este partido?", "Las sesiones creadas a partir de él se mantienen.", "Borrar partido"], clearPl: ["¿Vaciar la plantilla?", "Se eliminan todos los jugadores.", "Vaciar plantilla"], liveExit: ["¿Salir del entrenamiento?", "Se detiene el cronómetro.", "Salir"] }[sh.v];
+      const Q = { delS: ["¿Borrar esta sesión?", "No se puede deshacer.", "Borrar sesión"], clearEj: ["¿Empezar de cero?", "Se borran la plantilla, el partido y las sesiones de ejemplo. Tus datos se mantienen.", "Borrar ejemplos"], delM: ["¿Borrar este partido?", "Las sesiones creadas a partir de él se mantienen.", "Borrar partido"], clearPl: ["¿Vaciar la plantilla?", "Se eliminan todos los jugadores.", "Vaciar plantilla"], liveExit: ["¿Salir del entrenamiento?", "Se detiene el cronómetro.", "Salir"], lendP: ["¿Terminar esta parte?", "El cronómetro se para y se guarda la duración de la parte.", "Terminar parte"], lfin: ["¿Terminar el partido?", "Se cierra el marcador y se analizan las estadísticas.", "Terminar partido"] }[sh.v];
       title = Q[0];
       body = `<p>${Q[1]}</p><div class="row"><button class="btn" data-a="closeSheet">Cancelar</button><button class="btn primary" data-a="confirm" data-v="${sh.v}">${Q[2]}</button></div>`;
     }
@@ -2255,8 +2742,9 @@ var Pitch = (function () {
       save(); UI.draft = null; UI.page = { t: "ses", id: s.id, from: UI.page && UI.page.from }; render(); window.scrollTo(0, 0); toast("Sesión guardada en tu calendario");
     },
     back: () => {
+      if (UI.page && UI.page.t === "mlive") { const lm = findM(UI.page.id); if (!(lm && lm.vivo && lm.vivo.run)) keepOn(false); }
       const m = curM();
-      if (m && !m.rival && !m.texto && !m.fallos.length && !m.gf && !m.gc) S.partidos = S.partidos.filter((x) => x !== m), save();
+      if (m && UI.page.t === "match" && !m.rival && !m.texto && !m.fallos.length && !m.gf && !m.gc && !(m.ev || []).length) S.partidos = S.partidos.filter((x) => x !== m), save();
       UI.page = (UI.page && UI.page.from) || null; UI.sheet = null; render(); window.scrollTo(0, 0);
     },
     openS: (d) => openSes(d.id),
@@ -2290,6 +2778,13 @@ var Pitch = (function () {
     dup: () => { const s = cur(); const c = JSON.parse(JSON.stringify(s)); c.id = Engine.uid(); c.fecha = today(); c.creada = Date.now(); delete c.cierre; delete c.asist; delete c.ejemplo; S.sessions.push(c); save(); openSes(c.id); toast("Sesión duplicada para hoy"); },
     ask: (d) => openSheet({ t: "ask", v: d.v }),
     confirm: (d) => {
+      if (d.v === "lendP") {
+        const m = curM(), v = vivo(m);
+        v.durs[v.parte - 1] = elapsed(v); v.run = false; v.acum = 0;
+        if (v.parte < v.P) { v.campo[v.parte + 1] = onField(m, v.parte); v.parte++; save(); UI.sheet = null; render(); toast("Descanso. Revisa quién empieza la parte " + v.parte); return; }
+        finalizar(m); keepOn(false); UI.sheet = null; render(); window.scrollTo(0, 0); toast("Partido terminado"); return;
+      }
+      if (d.v === "lfin") { const m = curM(); finalizar(m); keepOn(false); UI.sheet = null; UI.page = { t: "match", id: m.id }; render(); window.scrollTo(0, 0); toast("Partido terminado: revisa el análisis"); return; }
       if (d.v === "delM") { const m = curM(); S.partidos = S.partidos.filter((x) => x !== m); save(); UI.page = null; toast("Partido borrado"); }
       if (d.v === "delS") { const s = cur(); S.sessions = S.sessions.filter((x) => x.id !== s.id); save(); UI.page = null; toast("Sesión borrada"); }
       if (d.v === "clearEj") { S.players = S.players.filter((p) => !p.ej); S.sessions = S.sessions.filter((s) => !s.ejemplo); S.partidos = S.partidos.filter((m) => !m.ejemplo); S.ejemplo = false; save(); UI.form = null; toast("Listo: empieza con tu equipo"); }
@@ -2313,6 +2808,82 @@ var Pitch = (function () {
       S.players.push({ id: "p" + Date.now().toString(36), nombre: n, dorsal: Number($("#pd").value) || (S.players.length + 1), pos: $("#pp").value, disp: true });
       save(); UI.form = null; const y = window.scrollY; render(); window.scrollTo(0, y); toast(n + " añadido"); $("#pn").focus();
     },
+    fcfOpen: () => { UI.fcfw = { step: "inicio" }; openSheet({ t: "fcf" }); },
+    fcfStart: () => fcfLoad(() => Promise.all([FCF.temporadas(), FCF.disciplinas()]), (r) => {
+      const t = r[0].find((x) => /2026-2027|2026-27/.test(x.l)) || r[0][0];
+      fcfStep({ step: "disc", temp: t ? t.v : "22", tempNom: t ? t.l : "", discs: r[1] });
+    }),
+    fcfDisc: (d) => { const w = UI.fcfw, o = w.discs.find((x) => x.v === d.v); fcfLoad(() => FCF.competicions(d.v, w.temp), (l) => fcfStep({ step: "comp", disc: d.v, discNom: o ? o.l : "", comps: l })); },
+    fcfComp: (d) => { const w = UI.fcfw, o = w.comps.find((x) => x.v === d.v); fcfLoad(() => FCF.grups(d.v, w.temp), (l) => fcfStep({ step: "grup", comp: d.v, compNom: o ? o.l : "", grups: l })); },
+    fcfGrup: (d) => { const w = UI.fcfw, o = w.grups.find((x) => x.v === d.v); fcfLoad(() => FCF.partidos(d.v).then((ps) => FCF.equips(d.v, ps).then((eq) => [ps, eq])), (r) => fcfStep({ step: "equip", grup: d.v, grupNom: o ? o.l : "", partidos: r[0], equips: r[1] })); },
+    fcfUrl: () => { const u = $("#fcfurl").value.trim(); fcfLoad(() => FCF.resolver(u).then((g) => FCF.partidos(g.grupId).then((ps) => FCF.equips(g.grupId, ps).then((eq) => [g, ps, eq]))), (r) => fcfStep({ step: "equip", grup: r[0].grupId, grupNom: r[0].grup, compNom: r[0].comp, temp: r[0].temporada, partidos: r[1], equips: r[2] })); },
+    fcfEquip: (d) => {
+      const w = UI.fcfw, e = w.equips.find((x) => x.codi === d.v);
+      S.fcf = { link: { grupId: w.grup, grup: w.grupNom, comp: w.compNom, temporada: w.temp, equipCodi: e.codi, equipNom: e.nom }, partidos: [], clas: [], ts: Date.now() };
+      fcfApply(w.partidos, []);
+      const cat = catDeComp(w.compNom);
+      let msg = "Equipo vinculado";
+      if (cat !== S.team.cat) { S.team.cat = cat; S.team.formato = fmtDef(cat); UI.form = null; msg += " · categoría " + CATS[cat].n; }
+      save(); UI.sheet = null; UI.fcfw = null; FCF.classificacio(w.grup).then((c) => { S.fcf.clas = c; save(); });
+      go("partidos"); toast(msg);
+    },
+    fcfSync: () => fcfSync(false),
+    fcfClas: () => openSheet({ t: "fcfClas" }),
+    fcfPrep: (d) => {
+      const p = fcfMine().find((x) => fcfKey(x) === d.k); if (!p) return;
+      let m = S.partidos.find((x) => x.fcf === d.k);
+      if (!m) {
+        const c = enCasa(p);
+        m = { id: "m" + Date.now().toString(36), fecha: p.fecha || today(), hora: p.hora, campo: p.campo, rival: rivalDe(p), local: c, comp: "Liga", gf: p.jugado ? (c ? p.gl : p.gv) : 0, gc: p.jugado ? (c ? p.gv : p.gl) : 0,
+          val: 3, texto: "", fallos: [], bien: [], flags: {}, sesiones: [], fcf: d.k, jornada: p.j };
+        S.partidos.push(m); save();
+      }
+      UI.page = { t: "match", id: m.id }; UI.sheet = null; render(); window.scrollTo(0, 0);
+    },
+    fcfUnlink: () => { S.fcf = null; save(); render(); toast("Equipo desvinculado"); },
+    fcfExport: () => { const code = "MISTER1." + btoa(unescape(encodeURIComponent(JSON.stringify({ link: S.fcf.link, partidos: fcfMine(), clas: S.fcf.clas, ts: S.fcf.ts })))); openSheet({ t: "fcfCode", code }); },
+    fcfImport: () => openSheet({ t: "fcfCode", imp: true }),
+    fcfDoImport: () => {
+      try {
+        const raw = $("#fcfcode").value.trim().replace(/^MISTER1\./, "");
+        const d = JSON.parse(decodeURIComponent(escape(atob(raw))));
+        if (!d.link || !Array.isArray(d.partidos)) throw new Error("x");
+        S.fcf = { link: d.link, partidos: d.partidos, clas: d.clas || [], ts: d.ts || Date.now() }; save(); UI.sheet = null; go("partidos"); toast("Calendario importado");
+      } catch (e) { toast("El código no es válido. Cópialo entero."); }
+    },
+    lopen: (d) => { const m = findM(d.id); vivo(m); save(); UI.page = { t: "mlive", id: d.id, from: UI.page && UI.page.t === "match" ? UI.page : null }; UI.sheet = null; render(); window.scrollTo(0, 0); if (!lvTick) lvTick = setInterval(liveClockTick, 500); },
+    newLive: () => { ACT.newM(); const m = curM(); m.fecha = today(); m.rival = ""; ACT.lopen({ id: m.id }); UI.page.from = { t: "match", id: m.id }; },
+    lfmt: (d) => { const m = curM(), v = vivo(m), f = d.v.split("x").map(Number); v.P = f[0]; v.M = f[1]; S.team.formato = f; save(); const y = window.scrollY; render(); window.scrollTo(0, y); },
+    lrun: () => {
+      const m = curM(), v = vivo(m);
+      if (v.fin) return;
+      try { if (!AC) AC = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { /* sin audio */ }
+      if (v.run) { v.acum += Date.now() - v.t0; v.run = false; }
+      else { if (!onField(m, v.parte).length && S.players.length) toast("Consejo: marca quién está en el campo para contar los minutos"); v.t0 = Date.now(); v.run = true; keepOn(true); beep(990, 0.15); }
+      save(); if (!lvTick) lvTick = setInterval(liveClockTick, 500);
+      const y = window.scrollY; render(); window.scrollTo(0, y);
+    },
+    lj: (d) => {
+      const m = curM(), v = vivo(m), on = onField(m, v.parte), parted = elapsed(v) > 0 || v.run;
+      if (!parted) { const l = v.campo[v.parte] = v.campo[v.parte] || [], i = l.indexOf(d.id); if (i >= 0) l.splice(i, 1); else l.push(d.id); save(); const y = window.scrollY; render(); window.scrollTo(0, y); return; }
+      openSheet(on.indexOf(d.id) >= 0 ? { t: "cambio", sale: d.id } : { t: "cambio", entra: d.id });
+    },
+    cambioOk: (d) => {
+      const m = curM(), v = vivo(m), sh = UI.sheet, seg = Math.round(elapsed(v) / 1000);
+      m.cambios.push({ p: v.parte, s: seg, sale: sh.sale || d.id, entra: sh.sale ? (d.id || null) : sh.entra });
+      save(); UI.sheet = null; const y = window.scrollY; render(); window.scrollTo(0, y); toast("Cambio anotado en el " + mmssS(seg));
+    },
+    ev: (d) => {
+      const m = curM(), v = vivo(m);
+      const e = { id: "e" + Date.now().toString(36) + Math.floor(Math.random() * 99), p: v.parte, s: Math.round(elapsed(v) / 1000), t: d.v };
+      m.ev.push(e); if (d.v === "gol" || d.v === "gol_r") { syncScore(m); beep(d.v === "gol" ? 1100 : 440, 0.2); }
+      buzz(30); save();
+      const y = window.scrollY; render(); window.scrollTo(0, y);
+      if (EVM[d.v].j && S.players.length) openSheet({ t: "evj", id: e.id }); else toast(EVM[d.v].n + " · " + mmssS(e.s));
+    },
+    evjp: (d) => { const m = curM(), e = m.ev.find((x) => x.id === UI.sheet.id); if (e) e.j = d.id; save(); UI.sheet = null; const y = window.scrollY; render(); window.scrollTo(0, y); toast(EVM[e.t].n + " · " + pname(d.id)); },
+    evdel: (d) => { const m = curM(); m.ev = m.ev.filter((x) => x.id !== d.id); syncScore(m); save(); const y = window.scrollY; render(); window.scrollTo(0, y); },
+    lundo: () => { const m = curM(); const e = m.ev.pop(); syncScore(m); save(); const y = window.scrollY; render(); window.scrollTo(0, y); if (e) toast("Quitado: " + EVM[e.t].n); },
     newM: () => {
       const m = { id: "m" + Date.now().toString(36), fecha: lastMatchDay(S.team.diaPartido), rival: "", local: true, comp: "Liga", gf: 0, gc: 0, val: 3, texto: "", fallos: [], bien: [], flags: {}, sesiones: [] };
       S.partidos.push(m); save(); UI.page = { t: "match", id: m.id }; UI.sheet = null; render(); window.scrollTo(0, 0);
@@ -2355,6 +2926,7 @@ var Pitch = (function () {
       toast(n ? n + (n > 1 ? " sesiones creadas en tu calendario" : " sesión creada") : "Las sesiones de esta semana ya estaban creadas");
     },
     tdia: (d) => { const l = S.team.dias, v = Number(d.v), i = l.indexOf(v); if (i >= 0) l.splice(i, 1); else l.push(v); l.sort(); save(); const y = window.scrollY; render(); window.scrollTo(0, y); },
+    tfmt: (d) => { S.team.formato = d.v.split("x").map(Number); save(); const y = window.scrollY; render(); window.scrollTo(0, y); },
     tdp: (d) => { S.team.diaPartido = Number(d.v); save(); const y = window.scrollY; render(); window.scrollTo(0, y); },
     lvPlay: () => { const L = UI.live; if (!L) return; L.run = !L.run; L.wait = false; L.last = Date.now(); if (L.run) beep(990, 0.18); renderLive(); },
     lvNext: () => { const L = UI.live; if (L) { const was = L.run; liveGo(L.i + 1, was); if (was) { L.last = Date.now(); } } },
@@ -2371,7 +2943,7 @@ var Pitch = (function () {
   }
   function render() {
     let html;
-    if (UI.page) html = UI.page.t === "draft" ? vSession(UI.draft, true) : UI.page.t === "match" ? vMatch(findM(UI.page.id)) : vSession(findS(UI.page.id), false);
+    if (UI.page) html = UI.page.t === "draft" ? vSession(UI.draft, true) : UI.page.t === "match" ? vMatch(findM(UI.page.id)) : UI.page.t === "mlive" ? vLive(findM(UI.page.id)) : vSession(findS(UI.page.id), false);
     else html = { inicio: vInicio, crear: vCrear, biblioteca: vBiblio, sesiones: vSesiones, partidos: vPartidos, equipo: vEquipo }[UI.tab]();
     $("#main").innerHTML = html;
     renderNav(); renderSheet();
@@ -2398,6 +2970,7 @@ var Pitch = (function () {
   document.addEventListener("input", (ev) => {
     const el = ev.target, ds = el.dataset;
     if (ds.lf === "q") { UI.lib.q = el.value; const l = $("#liblist"); if (l) l.innerHTML = libList(); }
+    else if (el.id === "fcfq") { UI.fcfw.q = el.value; const box = $("#fcflist"); if (box) { const tmp = document.createElement("div"); tmp.innerHTML = fcfSheet(); const nl = tmp.querySelector("#fcflist"); if (nl) box.innerHTML = nl.innerHTML; } }
     else if (el.id === "addq") { UI.sheet.q = el.value; $("#addlist").innerHTML = addList(el.value); }
     else if (ds.tf === "nombre" || ds.tf === "modelo") { S.team[ds.tf] = el.value; save(); }
     else if (ds.mf === "rival" || ds.mf === "texto") { const m = curM(); if (m) { m[ds.mf] = el.value; save(); } }
@@ -2416,6 +2989,7 @@ var Pitch = (function () {
     return false;
   };
 
+  if (S.fcf && S.fcf.link && FCF.nativo() && Date.now() - (S.fcf.ts || 0) > 6 * 3600 * 1000) setTimeout(() => fcfSync(true), 1500);
   const h0 = location.hash.slice(1);
   if (TABS.indexOf(h0) >= 0) UI.tab = h0;
   render();
