@@ -1,0 +1,223 @@
+[
+ {
+  "i": 0,
+  "url": "https://www.fcf.cat/en/competicio/2026-2027/tercera-catalana/grup-7/resultats",
+  "final": "https://www.fcf.cat/en/competicio/2026-2027/tercera-catalana/grup-7/resultats",
+  "status": 200,
+  "len": 127826,
+  "hrefs": [
+   "/en/clubs",
+   "/en/competicio",
+   "/en/pla-competicio",
+   "https://cluber.es/",
+   "https://fcf.cat/ca/competicio/2026-2027/tercera-catalana/grup-7/resultats",
+   "https://fcf.cat/en/competicio/2026-2027/tercera-catalana/grup-7/resultats",
+   "https://fcf.cat/es/competicio/2026-2027/tercera-catalana/grup-7/resultats"
+  ],
+  "scripts": [
+   "/_next/static/chunks/8213711ce0d86e6e.js",
+   "/_next/static/chunks/f7fc67b49c4ca87e.js",
+   "/_next/static/chunks/turbopack-0dd3e8fe19905f1b.js",
+   "/_next/static/chunks/ff1a16fafef87110.js",
+   "/_next/static/chunks/694836347d1e5ef3.js",
+   "/_next/static/chunks/106077215c424b2c.js",
+   "/_next/static/chunks/5739172db120828b.js",
+   "/_next/static/chunks/a6aa7e0e96af0499.js",
+   "/_next/static/chunks/8c7dfb67e1bb1546.js",
+   "/_next/static/chunks/19d66fc5a30c93ea.js",
+   "/_next/static/chunks/8d29a5c07dee70e4.js",
+   "/_next/static/chunks/603c225779118d8e.js",
+   "/_next/static/chunks/3c909b0fb6dbda81.js",
+   "/_next/static/chunks/79391c846d8a2346.js",
+   "/_next/static/chunks/a6dad97d9634a72d.js",
+   "/_next/static/chunks/4ce95e23af94440a.js"
+  ],
+  "apis": []
+ },
+ {
+  "i": 1,
+  "url": "https://www.fcf.cat/ca/competicio/2026-2027/tercera-catalana/grup-7/calendari",
+  "final": "https://www.fcf.cat/ca/competicio/2026-2027/tercera-catalana/grup-7/calendari",
+  "status": 200,
+  "len": 129151,
+  "hrefs": [
+   "/ca/clubs",
+   "/ca/competicio",
+   "/ca/pla-competicio",
+   "https://cluber.es/",
+   "https://fcf.cat/ca/competicio/2026-2027/tercera-catalana/grup-7/calendari",
+   "https://fcf.cat/en/competicio/2026-2027/tercera-catalana/grup-7/calendari",
+   "https://fcf.cat/es/competicio/2026-2027/tercera-catalana/grup-7/calendari"
+  ],
+  "scripts": [
+   "/_next/static/chunks/8213711ce0d86e6e.js",
+   "/_next/static/chunks/f7fc67b49c4ca87e.js",
+   "/_next/static/chunks/turbopack-0dd3e8fe19905f1b.js",
+   "/_next/static/chunks/ff1a16fafef87110.js",
+   "/_next/static/chunks/694836347d1e5ef3.js",
+   "/_next/static/chunks/106077215c424b2c.js",
+   "/_next/static/chunks/5739172db120828b.js",
+   "/_next/static/chunks/a6aa7e0e96af0499.js",
+   "/_next/static/chunks/8c7dfb67e1bb1546.js",
+   "/_next/static/chunks/19d66fc5a30c93ea.js",
+   "/_next/static/chunks/8d29a5c07dee70e4.js",
+   "/_next/static/chunks/603c225779118d8e.js",
+   "/_next/static/chunks/3c909b0fb6dbda81.js",
+   "/_next/static/chunks/79391c846d8a2346.js",
+   "/_next/static/chunks/a6dad97d9634a72d.js",
+   "/_next/static/chunks/4ce95e23af94440a.js"
+  ],
+  "apis": []
+ },
+ {
+  "i": 2,
+  "url": "https://www.fcf.cat/ca/competicio/2026-2027/tercera-catalana/grup-7/classificacio",
+  "final": "https://www.fcf.cat/ca/competicio/2026-2027/tercera-catalana/grup-7/classificacio",
+  "status": 200,
+  "len": 133253,
+  "hrefs": [
+   "/ca/clubs",
+   "/ca/competicio",
+   "/ca/pla-competicio",
+   "https://cluber.es/",
+   "https://fcf.cat/ca/competicio/2026-2027/tercera-catalana/grup-7/classificacio",
+   "https://fcf.cat/en/competicio/2026-2027/tercera-catalana/grup-7/classificacio",
+   "https://fcf.cat/es/competicio/2026-2027/tercera-catalana/grup-7/classificacio"
+  ],
+  "scripts": [
+   "/_next/static/chunks/8213711ce0d86e6e.js",
+   "/_next/static/chunks/f7fc67b49c4ca87e.js",
+   "/_next/static/chunks/turbopack-0dd3e8fe19905f1b.js",
+   "/_next/static/chunks/ff1a16fafef87110.js",
+   "/_next/static/chunks/694836347d1e5ef3.js",
+   "/_next/static/chunks/106077215c424b2c.js",
+   "/_next/static/chunks/5739172db120828b.js",
+   "/_next/static/chunks/a6aa7e0e96af0499.js",
+   "/_next/static/chunks/8c7dfb67e1bb1546.js",
+   "/_next/static/chunks/19d66fc5a30c93ea.js",
+   "/_next/static/chunks/8d29a5c07dee70e4.js",
+   "/_next/static/chunks/603c225779118d8e.js",
+   "/_next/static/chunks/3c909b0fb6dbda81.js",
+   "/_next/static/chunks/79391c846d8a2346.js",
+   "/_next/static/chunks/a6dad97d9634a72d.js",
+   "/_next/static/chunks/4ce95e23af94440a.js"
+  ],
+  "apis": []
+ },
+ {
+  "i": 3,
+  "url": "https://www.fcf.cat/calendari/2627/futbol-11/tercera-catalana/grup-7",
+  "error": "<HTTPError 410: 'Gone'>"
+ },
+ {
+  "i": 4,
+  "url": "https://www.fcf.cat/ca/clubs",
+  "final": "https://www.fcf.cat/ca/clubs",
+  "status": 200,
+  "len": 111805,
+  "hrefs": [
+   "/ca/clubs",
+   "/ca/competicio",
+   "/ca/pla-competicio",
+   "/sponsors/cluber.png",
+   "https://cluber.es/"
+  ],
+  "scripts": [
+   "/_next/static/chunks/8213711ce0d86e6e.js",
+   "/_next/static/chunks/f7fc67b49c4ca87e.js",
+   "/_next/static/chunks/turbopack-0dd3e8fe19905f1b.js",
+   "/_next/static/chunks/ff1a16fafef87110.js",
+   "/_next/static/chunks/694836347d1e5ef3.js",
+   "/_next/static/chunks/106077215c424b2c.js",
+   "/_next/static/chunks/5739172db120828b.js",
+   "/_next/static/chunks/a6aa7e0e96af0499.js",
+   "/_next/static/chunks/8c7dfb67e1bb1546.js",
+   "/_next/static/chunks/19d66fc5a30c93ea.js",
+   "/_next/static/chunks/b71ac1d13dc503b8.js",
+   "/_next/static/chunks/79391c846d8a2346.js",
+   "/_next/static/chunks/a6dad97d9634a72d.js",
+   "/_next/static/chunks/4ce95e23af94440a.js"
+  ],
+  "apis": []
+ },
+ {
+  "i": 5,
+  "url": "https://www.fcf.cat/ca/noticies-fcf/1036839",
+  "final": "https://www.fcf.cat/ca/noticies/disponibles-els-calendaris-de-les-categories-divisio-d-honor-i-preferent-mixt-de-futbol-base",
+  "status": 200,
+  "len": 192195,
+  "hrefs": [
+   "/ca/clubs",
+   "/ca/competicio",
+   "/ca/pla-competicio",
+   "https://api.whatsapp.com/send?text=Disponibles%20els%20calendaris%20de%20les%20categories%20Divisi%C3%B3%20d&#x27;Honor%20i%20Preferent%20mixt%20de%20futbol%20base%20",
+   "https://cluber.es/",
+   "https://twitter.com/intent/tweet?url=&amp;text=Disponibles%20els%20calendaris%20de%20les%20categories%20Divisi%C3%B3%20d&#x27;Honor%20i%20Preferent%20mixt%20de%20futbol%20base",
+   "https://www.fcf.cat/ca/noticies/disponibles-els-calendaris-de-les-categories-divisio-d-honor-i-preferent-mixt-de-futbol-base",
+   "https://www.fcf.cat/es/noticies/disponibles-els-calendaris-de-les-categories-divisio-d-honor-i-preferent-mixt-de-futbol-base"
+  ],
+  "scripts": [
+   "/_next/static/chunks/8213711ce0d86e6e.js",
+   "/_next/static/chunks/f7fc67b49c4ca87e.js",
+   "/_next/static/chunks/turbopack-0dd3e8fe19905f1b.js",
+   "/_next/static/chunks/ff1a16fafef87110.js",
+   "/_next/static/chunks/694836347d1e5ef3.js",
+   "/_next/static/chunks/106077215c424b2c.js",
+   "/_next/static/chunks/5739172db120828b.js",
+   "/_next/static/chunks/a6aa7e0e96af0499.js",
+   "/_next/static/chunks/8c7dfb67e1bb1546.js",
+   "/_next/static/chunks/19d66fc5a30c93ea.js",
+   "/_next/static/chunks/79391c846d8a2346.js",
+   "/_next/static/chunks/fd5973bfaf1c7619.js",
+   "/_next/static/chunks/603c225779118d8e.js",
+   "/_next/static/chunks/a6dad97d9634a72d.js",
+   "/_next/static/chunks/4ce95e23af94440a.js"
+  ],
+  "apis": [
+   "https://api.whatsapp.com/send?text=Disponibles%20els%20calendaris%20de%20les%20categories%20Divisi%C3%B3%20d&#x27;Honor%20i%20Preferent%20mixt%20de%20futbol%20base%20"
+  ]
+ },
+ {
+  "i": 6,
+  "url": "https://www.fcf.cat/ca/competicions",
+  "error": "<HTTPError 404: 'Not Found'>"
+ },
+ {
+  "i": 7,
+  "url": "https://www.fcf.cat/",
+  "final": "https://www.fcf.cat/ca",
+  "status": 200,
+  "len": 144679,
+  "hrefs": [
+   "/ca/clubs",
+   "/ca/competicio",
+   "/ca/competicio/2026-2027/divisio-honor-juvenil/grup-3",
+   "/ca/competicio/2026-2027/lliga-elit/grup-1",
+   "/ca/competicio/2026-2027/preferent-femeni/grup-1",
+   "/ca/competicio/2026-2027/preferent-juvenils/grup-1",
+   "/ca/competicio/2026-2027/primera-catalana/grup-1",
+   "/ca/competicio/2026-2027/primera-catalana/grup-2",
+   "/ca/competicio/2026-2027/segona-catalana/grup-1",
+   "/ca/pla-competicio",
+   "/sponsors/cluber.png",
+   "https://cluber.es/"
+  ],
+  "scripts": [
+   "/_next/static/chunks/8213711ce0d86e6e.js",
+   "/_next/static/chunks/f7fc67b49c4ca87e.js",
+   "/_next/static/chunks/turbopack-0dd3e8fe19905f1b.js",
+   "/_next/static/chunks/ff1a16fafef87110.js",
+   "/_next/static/chunks/694836347d1e5ef3.js",
+   "/_next/static/chunks/106077215c424b2c.js",
+   "/_next/static/chunks/5739172db120828b.js",
+   "/_next/static/chunks/a6aa7e0e96af0499.js",
+   "/_next/static/chunks/8c7dfb67e1bb1546.js",
+   "/_next/static/chunks/19d66fc5a30c93ea.js",
+   "/_next/static/chunks/710b926257563266.js",
+   "/_next/static/chunks/79391c846d8a2346.js",
+   "/_next/static/chunks/a6dad97d9634a72d.js",
+   "/_next/static/chunks/4ce95e23af94440a.js"
+  ],
+  "apis": []
+ }
+]
