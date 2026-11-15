@@ -1635,55 +1635,21 @@ var Pitch = (function () {
 
 /* =========================================================
    MÍSTER · Calendario de la Federació Catalana de Futbol
-   Lee competiciones, grupos, partidos y clasificación de
-   www.fcf.cat. En la app de Android la consulta se hace desde
-   el propio móvil (puente nativo); en el navegador se intenta
-   directamente y, si no se puede, se avisa.
+   Importa el calendario, los resultados y la clasificación
+   del grupo que el entrenador abre en la web oficial.
    ========================================================= */
 var FCF = (function () {
   "use strict";
-  var B = "https://www.fcf.cat", seq = 0, cbs = {};
-
-  window.__fcfCb = function (id, status, body) {
-    var c = cbs[id];
-    if (!c) return;
-    delete cbs[id];
-    if (status >= 200 && status < 300) {
-      try { c.ok(JSON.parse(body)); } catch (e) { c.ko(new Error("La FCF ha devuelto una respuesta que no se entiende.")); }
-    } else if (status) c.ko(new Error("La FCF ha respondido con un error (" + status + "). Prueba más tarde."));
-    else c.ko(new Error("No hay conexión con la FCF: " + (body || "revisa internet")));
-  };
-
-  function nativo() { return !!(window.AndroidApp && window.AndroidApp.httpGet); }
-
-  function get(path) {
-    if (nativo()) {
-      return new Promise(function (ok, ko) {
-        var id = String(++seq);
-        cbs[id] = { ok: ok, ko: ko };
-        try { window.AndroidApp.httpGet(id, B + path); } catch (e) { delete cbs[id]; ko(e); return; }
-        setTimeout(function () { if (cbs[id]) { delete cbs[id]; ko(new Error("La FCF tarda demasiado en responder.")); } }, 30000);
-      });
-    }
-    return fetch(B + path, { credentials: "omit" }).then(function (r) {
-      if (!r.ok) throw new Error("La FCF ha respondido con un error (" + r.status + ").");
-      return r.json();
-    }, function () {
-      var e = new Error("Desde el navegador la web de la FCF no deja leer su calendario. Vincula el equipo desde la app de Android o importa el código de calendario de un compañero.");
-      e.bloqueo = true;
-      throw e;
-    });
-  }
+  /* La FCF no permite que otras apps lean sus datos directamente. En Android la app abre
+     la web oficial dentro de la app; cuando el entrenador está en el calendario de su grupo,
+     pulsa «Importar este grupo» y la web entrega aquí los mismos datos que está mostrando. */
+  function disponible() { return !!(window.AndroidApp && window.AndroidApp.fcfOpen); }
+  function abrir(url, auto) { window.AndroidApp.fcfOpen(url || "", !!auto); }
 
   function arr(x) {
     if (Array.isArray(x)) return x;
     if (x && typeof x === "object") return x.value || x.result || x.data || x.items || [];
     return [];
-  }
-  function opts(x) {
-    return arr(x).map(function (o) {
-      return { v: String(o.value != null ? o.value : o.id), l: String(o.label || o.nom || o.nombre || o.value || "").trim(), raw: o };
-    }).filter(function (o) { return o.v && o.l; });
   }
   function num(v) { if (v === null || v === undefined || v === "") return null; var n = Number(v); return isNaN(n) ? null : n; }
   function clean(s) { return String(s == null ? "" : s).replace(/\s+/g, " ").trim(); }
@@ -1695,92 +1661,69 @@ var FCF = (function () {
     return m ? m[0] : "";
   }
 
-  function temporadas() { return get("/api/competition/temporadas").then(opts); }
-  function disciplinas() { return get("/api/competition/disciplines").then(function (x) { return opts(x).filter(function (o) { return o.v !== "21081178"; }); }); }
-  function competicions(d, t) { return get("/api/competition/competicions?disciplinaId=" + encodeURIComponent(d) + "&temporada=" + encodeURIComponent(t)).then(opts); }
-  function grups(c, t) { return get("/api/competition/grupos?competicioId=" + encodeURIComponent(c) + "&temporada=" + encodeURIComponent(t)).then(opts); }
-
-  /* A partir de un enlace de fcf.cat (…/competicio/2026-2027/nom/grup-20/…) */
-  function resolver(url) {
-    var m = String(url || "").match(/competicio\/(\d{4}-\d{4})\/([^/?#]+)\/([^/?#]+)/);
-    if (!m) return Promise.reject(new Error("Ese enlace no es de una competición de fcf.cat. Abre tu grupo en la web de la FCF y copia la dirección."));
-    return get("/api/competition/resolve-slug?temporada=" + m[1] + "&competicioUrl=" + encodeURIComponent(m[2]) + "&grupoUrl=" + encodeURIComponent(m[3])).then(function (r) {
-      if (!r || !r.grupId) throw new Error("No he encontrado ese grupo en la FCF.");
-      return { grupId: String(r.grupId), temporada: String(r.temporadaId || ""), comp: clean(r.competicioNom), grup: clean(r.grupoNom), compId: String(r.competicioId || ""), temporadaNom: clean(r.temporadaNom) };
-    });
-  }
-
-  function partidos(g) {
-    return get("/api/competition/partidos?grupId=" + encodeURIComponent(g)).then(function (s) {
-      var a = (s && s.result && s.result.partidos) || (s && s.partidos) || s || {};
-      var fj = (s && s.result && s.result.fechasJornadas) || (s && s.fechasJornadas) || {};
-      var out = [];
-      Object.keys(a).forEach(function (j) {
-        var l = a[j];
-        if (!Array.isArray(l)) return;
-        l.forEach(function (p) {
-          var c = p.COMIENZO1 && p.COMIENZO1 !== "0000-00-00 00:00:00" ? String(p.COMIENZO1) : "";
-          var gl = num(p.GOLES_CASA), gv = num(p.GOLES_FUERA), est = String(p.ESTADO == null ? "" : p.ESTADO);
-          var cerrada = p.CERRADA === 1 || p.CERRADA === true || p.CERRADA === "1" || est === "1" || est === "6";
-          out.push({
-            j: Number(j), fecha: c ? c.slice(0, 10) : normDate(fj[j]), hora: c ? c.slice(11, 16) : "",
-            local: clean(p.NOMBRE_CASA), visit: clean(p.NOMBRE_FUERA), codL: String(p.CODEQUIPO_CASA || ""), codV: String(p.CODEQUIPO_FUERA || ""),
-            gl: gl, gv: gv, jugado: cerrada && est !== "2" && gl != null && gv != null, aplazado: est === "2" || est === "3",
-            campo: clean(p.CAMPO), lat: num(p.LATITUD), lng: num(p.LONGITUD)
-          });
+  function parsePartidos(s) {
+    var a = (s && s.result && s.result.partidos) || (s && s.partidos) || s || {};
+    var fj = (s && s.result && s.result.fechasJornadas) || (s && s.fechasJornadas) || {};
+    var out = [];
+    Object.keys(a).forEach(function (j) {
+      var l = a[j];
+      if (!Array.isArray(l)) return;
+      l.forEach(function (p) {
+        var c = p.COMIENZO1 && p.COMIENZO1 !== "0000-00-00 00:00:00" ? String(p.COMIENZO1) : "";
+        var gl = num(p.GOLES_CASA), gv = num(p.GOLES_FUERA), est = String(p.ESTADO == null ? "" : p.ESTADO);
+        var cerrada = p.CERRADA === 1 || p.CERRADA === true || p.CERRADA === "1" || est === "1" || est === "6";
+        out.push({
+          j: Number(j), fecha: c ? c.slice(0, 10) : normDate(fj[j]), hora: c ? c.slice(11, 16) : "",
+          local: clean(p.NOMBRE_CASA), visit: clean(p.NOMBRE_FUERA), codL: String(p.CODEQUIPO_CASA || ""), codV: String(p.CODEQUIPO_FUERA || ""),
+          gl: gl, gv: gv, jugado: cerrada && est !== "2" && gl != null && gv != null, aplazado: est === "2" || est === "3",
+          campo: clean(p.CAMPO), lat: num(p.LATITUD), lng: num(p.LONGITUD)
         });
       });
-      return out.sort(function (x, y) { return x.j - y.j || ((x.fecha + x.hora) < (y.fecha + y.hora) ? -1 : 1); });
     });
+    return out.sort(function (x, y) { return x.j - y.j || ((x.fecha + x.hora) < (y.fecha + y.hora) ? -1 : 1); });
   }
 
-  function equips(g, lista) {
-    var desdePartidos = function () {
-      var m = {};
-      (lista || []).forEach(function (p) { if (p.local) m[p.codL || p.local] = p.local; if (p.visit) m[p.codV || p.visit] = p.visit; });
-      return Object.keys(m).map(function (k) { return { codi: k, nom: m[k] }; });
-    };
-    return get("/api/competition/equipos?grupId=" + encodeURIComponent(g)).then(function (x) {
-      var l = arr(x).map(function (o) {
-        return { codi: String(o.codequipo || o.CODEQUIPO || o.teamId || o.value || o.id || ""), nom: clean(o.nombre_equipo || o.NOMBRE_EQUIPO || o.nombre || o.label || o.nom) };
-      }).filter(function (e) { return e.nom; });
-      return l.length ? l : desdePartidos();
-    }, desdePartidos);
+  function parseEquips(x, lista) {
+    var l = arr(x).map(function (o) {
+      return { codi: String(o.codequipo || o.CODEQUIPO || o.teamId || o.value || o.id || ""), nom: clean(o.nombre_equipo || o.NOMBRE_EQUIPO || o.nombre || o.label || o.nom) };
+    }).filter(function (e) { return e.nom; });
+    if (l.length) return l;
+    var m = {};
+    (lista || []).forEach(function (p) { if (p.local) m[p.codL || p.local] = p.local; if (p.visit) m[p.codV || p.visit] = p.visit; });
+    return Object.keys(m).map(function (k) { return { codi: k, nom: m[k] }; });
   }
 
-  /* Clasificación: se busca la primera lista de filas con nombre de equipo */
-  function classificacio(g) {
-    return get("/api/competition/classificacio?grupId=" + encodeURIComponent(g)).then(function (s) {
-      var rows = null;
-      (function walk(x, d) {
-        if (rows || d > 5 || !x || typeof x !== "object") return;
-        if (Array.isArray(x)) {
-          if (x.length && typeof x[0] === "object" && x[0] && Object.keys(x[0]).some(function (k) { return /nom|equip|team/i.test(k) && typeof x[0][k] === "string"; })) { rows = x; return; }
-          x.forEach(function (y) { walk(y, d + 1); });
-        } else Object.keys(x).forEach(function (k) { walk(x[k], d + 1); });
-      })(s, 0);
-      if (!rows) return [];
-      var pick = function (o, re) { var k = Object.keys(o).find(function (k) { return re.test(k); }); return k ? o[k] : ""; };
-      return rows.map(function (o, i) {
-        return {
-          pos: num(pick(o, /^(pos|posicio|posicion|lloc)/i)) || i + 1,
-          nom: clean(pick(o, /nombre_equipo|nom_equip|equipo|equip|^nom|team/i)),
-          pts: num(pick(o, /punt|^pts|points/i)), pj: num(pick(o, /^pj$|jugat|jugad|played/i)),
-          gf: num(pick(o, /^gf$|goles_favor|gols_favor|favor/i)), gc: num(pick(o, /^gc$|goles_contra|gols_contra|contra/i))
-        };
-      }).filter(function (r) { return r.nom; });
-    }).catch(function () { return []; });
+  /* Clasificación: primera lista de filas con nombre de equipo */
+  function parseClas(s) {
+    var rows = null;
+    (function walk(x, d) {
+      if (rows || d > 5 || !x || typeof x !== "object") return;
+      if (Array.isArray(x)) {
+        if (x.length && x[0] && typeof x[0] === "object" && Object.keys(x[0]).some(function (k) { return /nom|equip|team/i.test(k) && typeof x[0][k] === "string"; })) { rows = x; return; }
+        x.forEach(function (y) { walk(y, d + 1); });
+      } else Object.keys(x).forEach(function (k) { walk(x[k], d + 1); });
+    })(s, 0);
+    if (!rows) return [];
+    var pick = function (o, re) { var k = Object.keys(o).find(function (k) { return re.test(k); }); return k ? o[k] : ""; };
+    return rows.map(function (o, i) {
+      return {
+        pos: num(pick(o, /^(pos|posicio|posicion|lloc)/i)) || i + 1,
+        nom: clean(pick(o, /nombre_equipo|nom_equip|equipo|equip|^nom|team/i)),
+        pts: num(pick(o, /punt|^pts|points/i)), pj: num(pick(o, /^pj$|jugat|jugad|played/i)),
+        gf: num(pick(o, /^gf$|goles_favor|gols_favor|favor/i)), gc: num(pick(o, /^gc$|goles_contra|gols_contra|contra/i))
+      };
+    }).filter(function (r) { return r.nom; });
   }
 
   /* Nombres de la FCF («CORNELLA, U.E. A») en formato legible */
   function bonito(n) {
     return clean(n).toLowerCase().split(" ").map(function (w) {
-      if (/\./.test(w) || /^[a-z]$/.test(w) || /^(ue|cf|fc|ce|ud|cd|ae|sad|ae|cfa|efb|pb|ad|at)[,]?$/.test(w)) return w.toUpperCase();
+      if (/\./.test(w) || /^[a-z]$/.test(w) || /^(ue|cf|fc|ce|ud|cd|ae|sad|cfa|efb|pb|ad|at)[,]?$/.test(w)) return w.toUpperCase();
       return w.charAt(0).toUpperCase() + w.slice(1);
     }).join(" ");
   }
 
-  return { nativo: nativo, temporadas: temporadas, disciplinas: disciplinas, competicions: competicions, grups: grups, resolver: resolver, partidos: partidos, equips: equips, classificacio: classificacio, bonito: bonito };
+  return { disponible: disponible, abrir: abrir, parsePartidos: parsePartidos, parseEquips: parseEquips, parseClas: parseClas, bonito: bonito, clean: clean };
 })();
 
 /* =========================================================
@@ -2346,15 +2289,13 @@ var FCF = (function () {
       return `${filtro ? `<input type="text" id="fcfq" value="${esc(w.q || "")}" placeholder="Filtrar…" aria-label="Filtrar">` : ""}
         <div class="list" id="fcflist">${l.map((o) => `<button class="item opt${sel && sel(o) ? " hl" : ""}" data-a="${action}" data-v="${esc(o.v)}"><span class="it"><b>${esc(o.l)}</b>${o.sub ? `<span class="muted" style="font-size:13px">${esc(o.sub)}</span>` : ""}</span>${ic("next")}</button>`).join("") || '<p class="muted">Sin resultados.</p>'}</div>`;
     };
-    if (w.err) return `<p class="note warn">${esc(w.err)}</p>${w.bloqueo ? "" : `<button class="btn" data-a="fcfOpen">Volver a empezar</button>`}`;
-    if (w.loading) return `<p class="muted loading">Consultando la FCF…</p>`;
-    if (w.step === "inicio") return `<p>Elige tu equipo paso a paso o pega el enlace de tu grupo en <b>fcf.cat</b>.</p>
-      <button class="btn primary big" data-a="fcfStart">Buscar mi competición</button>
-      <div class="field"><label for="fcfurl">O pega el enlace del grupo</label><input type="text" id="fcfurl" placeholder="https://www.fcf.cat/ca/competicio/2026-2027/…/grup-20" inputmode="url">
-      <button class="btn" data-a="fcfUrl">Usar este enlace</button></div>`;
-    if (w.step === "disc") return `<p class="muted">Temporada ${esc(w.tempNom)} · ¿Qué modalidad?</p>` + lista(w.discs, "fcfDisc");
-    if (w.step === "comp") return `<p class="muted">${esc(w.discNom)} · Elige la competición</p>` + lista(w.comps, "fcfComp", null, true);
-    if (w.step === "grup") return `<p class="muted">${esc(w.compNom)} · Elige el grupo</p>` + lista(w.grups, "fcfGrup", null, w.grups.length > 8);
+    if (w.step === "inicio") return FCF.disponible() ? `<p>La FCF no deja que otras apps lean sus datos, así que Míster abre <b>su web oficial dentro de la app</b>:</p>
+      <ol class="pts"><li>Busca tu competición: <b>Competició → Futbol 7 → tu categoría → tu grup</b> (o usa el buscador de la web).</li><li>Cuando veas el calendario de tu grupo, pulsa <b>«Importar este grupo»</b> arriba.</li><li>Elige tu equipo en la lista.</li></ol>
+      <button class="btn primary big" data-a="fcfBrowse">Abrir la web de la FCF</button>
+      <div class="field"><label for="fcfurl">¿Ya tienes el enlace de tu grupo? Pégalo aquí</label><input type="text" id="fcfurl" placeholder="https://www.fcf.cat/ca/competicio/2026-2027/…/grup-20" inputmode="url"><button class="btn" data-a="fcfBrowse" data-v="url">Abrir ese grupo</button></div>`
+      : `<p class="note warn">En iPhone y en el navegador no se puede vincular: la FCF no deja que otras webs lean su calendario.</p>
+      <ul class="pts"><li>Pide a un entrenador con la app de Android que vincule el equipo y te pase el código: Equipo → <b>Compartir calendario</b>. Después pulsa aquí <b>Tengo un código</b>.</li><li>O añade tus partidos a mano con <b>+ Partido</b>, con fecha y rival.</li></ul>
+      <div class="row"><button class="btn primary" data-a="fcfImport">Tengo un código</button><a class="btn" href="https://www.fcf.cat/ca/competicio" target="_blank" rel="noopener">Ver la web de la FCF</a></div>`;
     if (w.step === "equip") {
       const club = (S.team.nombre || "").toUpperCase().replace(/^(UE|CF|FC|CE|UD|CD)\s+/, "").split(" ")[0];
       return `<p class="muted">${esc(w.compNom)} · ${esc(w.grupNom)} · ¿Cuál es tu equipo?</p>` + lista(w.equips.map((e) => ({ v: e.codi, l: FCF.bonito(e.nom) })).sort((a, b) => a.l.localeCompare(b.l)), "fcfEquip", (o) => club && o.l.toUpperCase().indexOf(club) >= 0);
@@ -2373,14 +2314,27 @@ var FCF = (function () {
     });
     save();
   }
-  function fcfSync(silent) {
-    const l = S.fcf && S.fcf.link; if (!l) return Promise.resolve();
-    return Promise.all([FCF.partidos(l.grupId), FCF.classificacio(l.grupId)]).then((r) => {
-      fcfApply(r[0], r[1]);
-      if (!silent) toast("Calendario actualizado");
-      if (!UI.sheet && (UI.tab === "partidos" || UI.tab === "inicio") && !UI.page) { const y = window.scrollY; render(); window.scrollTo(0, y); }
-    }, (e) => { if (!silent) toast(e.message); });
+  function fcfSync() {
+    const l = S.fcf && S.fcf.link; if (!l) return;
+    if (!FCF.disponible()) { toast("El calendario se actualiza desde la app de Android. Pide un código nuevo a tu compañero."); return; }
+    if (!l.url) { ACT.fcfOpen(); return; }
+    FCF.abrir(l.url, true);
   }
+  window.__fcfImport = function (txt) {
+    let d;
+    try { d = JSON.parse(txt); } catch (e) { toast("La FCF ha devuelto datos que no se entienden"); return; }
+    if (d.err) { toast(d.err); return; }
+    const g = d.grup || {}, ps = FCF.parsePartidos(d.partidos), clas = FCF.parseClas(d.clas), grupId = String(g.grupId || "");
+    if (!ps.length) { toast("Ese grupo todavía no tiene partidos publicados"); return; }
+    if (S.fcf && S.fcf.link && S.fcf.link.grupId === grupId) {
+      S.fcf.link.url = d.url; fcfApply(ps, clas); toast("Calendario actualizado");
+      if (!UI.sheet) { const y = window.scrollY; render(); window.scrollTo(0, y); }
+      return;
+    }
+    UI.fcfw = { step: "equip", grup: grupId, grupNom: FCF.clean(g.grupoNom), compNom: FCF.clean(g.competicioNom), temp: String(g.temporadaId || ""), partidos: ps, equips: FCF.parseEquips(d.equipos, ps), clas, url: d.url };
+    openSheet({ t: "fcf" });
+  };
+
 
   /* ---------- PARTIDO EN DIRECTO ---------- */
   const FORMATOS = [[4, 12], [4, 10], [4, 15], [2, 25], [2, 30], [2, 35], [2, 40], [2, 45]];
@@ -2809,25 +2763,22 @@ var FCF = (function () {
       save(); UI.form = null; const y = window.scrollY; render(); window.scrollTo(0, y); toast(n + " añadido"); $("#pn").focus();
     },
     fcfOpen: () => { UI.fcfw = { step: "inicio" }; openSheet({ t: "fcf" }); },
-    fcfStart: () => fcfLoad(() => Promise.all([FCF.temporadas(), FCF.disciplinas()]), (r) => {
-      const t = r[0].find((x) => /2026-2027|2026-27/.test(x.l)) || r[0][0];
-      fcfStep({ step: "disc", temp: t ? t.v : "22", tempNom: t ? t.l : "", discs: r[1] });
-    }),
-    fcfDisc: (d) => { const w = UI.fcfw, o = w.discs.find((x) => x.v === d.v); fcfLoad(() => FCF.competicions(d.v, w.temp), (l) => fcfStep({ step: "comp", disc: d.v, discNom: o ? o.l : "", comps: l })); },
-    fcfComp: (d) => { const w = UI.fcfw, o = w.comps.find((x) => x.v === d.v); fcfLoad(() => FCF.grups(d.v, w.temp), (l) => fcfStep({ step: "grup", comp: d.v, compNom: o ? o.l : "", grups: l })); },
-    fcfGrup: (d) => { const w = UI.fcfw, o = w.grups.find((x) => x.v === d.v); fcfLoad(() => FCF.partidos(d.v).then((ps) => FCF.equips(d.v, ps).then((eq) => [ps, eq])), (r) => fcfStep({ step: "equip", grup: d.v, grupNom: o ? o.l : "", partidos: r[0], equips: r[1] })); },
-    fcfUrl: () => { const u = $("#fcfurl").value.trim(); fcfLoad(() => FCF.resolver(u).then((g) => FCF.partidos(g.grupId).then((ps) => FCF.equips(g.grupId, ps).then((eq) => [g, ps, eq]))), (r) => fcfStep({ step: "equip", grup: r[0].grupId, grupNom: r[0].grup, compNom: r[0].comp, temp: r[0].temporada, partidos: r[1], equips: r[2] })); },
+    fcfBrowse: (d) => {
+      let u = "";
+      if (d.v === "url") { u = ($("#fcfurl").value || "").trim(); if (!/fcf\.cat\/[a-z]{2}\/competicio\//.test(u)) { toast("Ese enlace no es de un grupo de fcf.cat"); return; } }
+      UI.sheet = null; renderSheet(); FCF.abrir(u, false);
+    },
     fcfEquip: (d) => {
       const w = UI.fcfw, e = w.equips.find((x) => x.codi === d.v);
-      S.fcf = { link: { grupId: w.grup, grup: w.grupNom, comp: w.compNom, temporada: w.temp, equipCodi: e.codi, equipNom: e.nom }, partidos: [], clas: [], ts: Date.now() };
-      fcfApply(w.partidos, []);
+      S.fcf = { link: { grupId: w.grup, grup: w.grupNom, comp: w.compNom, temporada: w.temp, equipCodi: e.codi, equipNom: e.nom, url: w.url }, partidos: [], clas: [], ts: Date.now() };
+      fcfApply(w.partidos, w.clas || []);
       const cat = catDeComp(w.compNom);
       let msg = "Equipo vinculado";
       if (cat !== S.team.cat) { S.team.cat = cat; S.team.formato = fmtDef(cat); UI.form = null; msg += " · categoría " + CATS[cat].n; }
-      save(); UI.sheet = null; UI.fcfw = null; FCF.classificacio(w.grup).then((c) => { S.fcf.clas = c; save(); });
+      save(); UI.sheet = null; UI.fcfw = null;
       go("partidos"); toast(msg);
     },
-    fcfSync: () => fcfSync(false),
+    fcfSync: () => fcfSync(),
     fcfClas: () => openSheet({ t: "fcfClas" }),
     fcfPrep: (d) => {
       const p = fcfMine().find((x) => fcfKey(x) === d.k); if (!p) return;
@@ -2989,7 +2940,6 @@ var FCF = (function () {
     return false;
   };
 
-  if (S.fcf && S.fcf.link && FCF.nativo() && Date.now() - (S.fcf.ts || 0) > 6 * 3600 * 1000) setTimeout(() => fcfSync(true), 1500);
   const h0 = location.hash.slice(1);
   if (TABS.indexOf(h0) >= 0) UI.tab = h0;
   render();

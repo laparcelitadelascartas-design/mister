@@ -1,5 +1,5 @@
 /* Míster · funcionamiento sin conexión */
-const CACHE = "mister-fccebf409b";
+const CACHE = "mister-cc1581bf68";
 const CORE = ["./", "./index.html", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png"];
 
 self.addEventListener("install", (e) => {
