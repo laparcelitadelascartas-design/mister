@@ -2,7 +2,7 @@ name: Probe FCF
 on:
   push:
     branches: [fcf-probe]
-    paths: [tools/probe.py]
+    paths: [tools/probe.js]
 permissions:
   contents: write
 jobs:
@@ -10,10 +10,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: python3 tools/probe.py
+      - run: npm i playwright-core@1.48.2 --no-save && mkdir -p probe && node tools/probe.js || true
       - run: |
           git config user.name "github-actions"
           git config user.email "github-actions@users.noreply.github.com"
           git add probe
-          git commit -m "probe results" || true
+          git commit -m "browser probe" || true
           git push
