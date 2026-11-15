@@ -1,9 +1,21 @@
 import urllib.request, json, os, re
 UA = {"User-Agent": "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 Chrome/130 Mobile Safari/537.36", "Accept-Language": "ca,es;q=0.9",
-      "Origin": "https://laparcelitadelascartas-design.github.io", "Accept": "application/json"}
+      "Referer": "https://www.fcf.cat/ca/competicio/2026-2027/tercera-catalana/grup-7/calendari", "Accept": "*/*", "Sec-Fetch-Site": "same-origin", "Sec-Fetch-Mode": "cors", "Sec-Fetch-Dest": "empty"}
+def variant(hdrs, tag):
+    try:
+        r = urllib.request.urlopen(urllib.request.Request(B + "/api/competition/temporadas", headers=hdrs), timeout=40)
+        return {"tag": tag, "status": r.status, "acao": r.headers.get("Access-Control-Allow-Origin"), "body": r.read().decode()[:300]}
+    except Exception as e:
+        return {"tag": tag, "error": repr(e)}
 B = "https://www.fcf.cat"
 os.makedirs("probe", exist_ok=True)
 log = []
+base_ua = {"User-Agent": UA["User-Agent"]}
+log.append(variant(base_ua, "solo UA"))
+log.append(variant(dict(base_ua, Origin="https://laparcelitadelascartas-design.github.io"), "con Origin github"))
+log.append(variant(dict(base_ua, Origin="null"), "con Origin null"))
+log.append(variant(dict(base_ua, Referer="https://www.fcf.cat/ca"), "con Referer fcf"))
+log.append(variant(UA, "navegador completo"))
 def get(path, name):
     try:
         r = urllib.request.urlopen(urllib.request.Request(B + path, headers=UA), timeout=40)
