@@ -248,8 +248,8 @@ details .inner { display: flex; flex-direction: column; gap: 12px; padding-top: 
 
 /* Barra inferior */
 #nav { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; background: var(--surface); border-top: 1px solid var(--line); padding-bottom: env(safe-area-inset-bottom); }
-#nav .in { max-width: 760px; margin: 0 auto; display: grid; grid-template-columns: repeat(6, 1fr); }
-#nav a { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 9px 1px 10px; text-decoration: none; color: var(--muted); font-size: 11px; font-weight: 600; }
+#nav .in { max-width: 760px; margin: 0 auto; display: grid; grid-template-columns: repeat(7, 1fr); }
+#nav a { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 9px 0 10px; text-decoration: none; color: var(--muted); font-size: 10.5px; font-weight: 600; letter-spacing: -.01em; min-width: 0; }
 #nav a svg { width: 24px; height: 24px; }
 #nav a.on { color: var(--accent); }
 #nav a.cta span.ic { background: var(--accent); color: #fff; border-radius: 12px; width: 42px; height: 30px; display: grid; place-items: center; margin-top: -2px; }
@@ -413,6 +413,43 @@ svg.heat { display: block; width: 100%; height: auto; border-radius: 10px; color
 #vax .opt-big b { font-size: 17px; }
 #vax .opt-big span { font-size: 14px; color: rgba(255, 255, 255, .75); }
 #vax .opt-big.on { border-color: var(--accent); background: rgba(240, 86, 27, .18); }
+
+/* Pizarra táctica */
+#piz .pz { position: fixed; inset: 0; z-index: 60; background: #0d1a13; color: #fff; display: flex; flex-direction: column; gap: 10px; padding: calc(10px + env(safe-area-inset-top)) 14px calc(14px + env(safe-area-inset-bottom)); overflow-y: auto; }
+#piz .pz > * { flex-shrink: 0; }
+.pz-top { display: flex; align-items: center; gap: 8px; }
+.pz-top input { flex: 1; min-width: 0; background: rgba(255, 255, 255, .08); border: 1px solid rgba(255, 255, 255, .18); color: #fff; border-radius: 10px; padding: 9px 12px; font: inherit; font-weight: 700; }
+.pz-top b { flex: 1; font-size: 18px; }
+#piz .iconbtn { color: #fff; background: rgba(255, 255, 255, .08); font-size: 20px; }
+#piz .iconbtn[disabled] { opacity: .35; }
+.pz-board { display: flex; justify-content: center; }
+.pz-board canvas { display: block; border-radius: 10px; touch-action: none; box-shadow: 0 6px 20px rgba(0, 0, 0, .35); }
+.pz-play, .pz-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.pz-row > .btn { flex: 1; }
+.pz-t { font-variant-numeric: tabular-nums; color: rgba(255, 255, 255, .7); font-size: 14px; flex: 1; text-align: center; }
+#piz .btn:not(.primary):not(.rec) { background: rgba(255, 255, 255, .08); border-color: rgba(255, 255, 255, .2); color: #fff; }
+#piz .btn[disabled] { opacity: .4; }
+#piz .btn.rec { background: #d93a3a; border-color: #d93a3a; color: #fff; }
+#piz .chip { background: rgba(255, 255, 255, .08); border-color: rgba(255, 255, 255, .2); color: #fff; }
+#piz .chip.on { background: var(--accent); border-color: var(--accent); }
+#piz .seg { display: grid; grid-template-columns: repeat(3, 1fr); background: rgba(255, 255, 255, .08); border-radius: 12px; padding: 4px; gap: 4px; }
+#piz .seg button { border: 0; background: transparent; color: rgba(255, 255, 255, .8); font: inherit; font-weight: 700; padding: 10px 4px; border-radius: 9px; }
+#piz .seg button.on { background: #fff; color: #0d1a13; }
+.pz-bar { display: grid; gap: 8px; }
+.pz-hint { margin: 0; font-size: 13.5px; color: rgba(255, 255, 255, .7); }
+.pz-forms { flex-wrap: nowrap; overflow-x: auto; }
+#piz .pz.ver { justify-content: center; }
+.pz-hidden { position: fixed; left: -9999px; top: 0; width: 10px; height: 10px; opacity: 0; pointer-events: none; }
+.pz-wait { position: fixed; inset: 0; z-index: 90; background: rgba(5, 12, 8, .7); display: grid; place-items: center; color: #fff; }
+.pz-wait > div { width: min(320px, 80vw); display: grid; gap: 10px; text-align: center; }
+.pzi { display: grid; grid-template-columns: 72px 1fr; gap: 12px; align-items: start; }
+.pzthumb { border: 0; padding: 0; background: none; border-radius: 8px; overflow: hidden; }
+.pzthumb img { display: block; width: 72px; height: auto; }
+.pzi .row { display: flex; gap: 6px; margin-top: 6px; align-items: center; }
+.pz-forms .chip { white-space: nowrap; flex-shrink: 0; }
+#piz .pz-row .btn { white-space: nowrap; flex: 1 1 auto; padding-left: 10px; padding-right: 10px; }
+#piz .pz-play .btn { white-space: nowrap; }
+.pz-t { white-space: nowrap; }
 
 </style>
 </head>
@@ -1884,19 +1921,49 @@ var Vision = (function () {
     return bd < lim && bd < sd * 0.75 ? b : 0;
   }
 
+  /* Los dos colores principales del pecho de un jugador (camisetas lisas o a rayas), sin el césped */
+  function coloresCamiseta(data, W, H, b) {
+    var x0 = Math.max(0, Math.round(b[0] + b[2] * 0.2)), x1 = Math.min(W - 1, Math.round(b[0] + b[2] * 0.8));
+    var y0 = Math.max(0, Math.round(b[1] + b[3] * 0.14)), y1 = Math.min(H - 1, Math.round(b[1] + b[3] * 0.5));
+    var px = [];
+    for (var y = y0; y <= y1; y++) for (var x = x0; x <= x1; x++) {
+      var k = (y * W + x) * 4, r = data[k], g = data[k + 1], bl = data[k + 2];
+      if (cesped(r, g, bl) && g > 60) continue;
+      px.push([r, g, bl, lab(r, g, bl)]);
+    }
+    if (px.length < 6) return null;
+    /* k-medias con 2 grupos */
+    var c = [px[0][3], px[px.length - 1][3]], asig = new Array(px.length);
+    for (var it = 0; it < 8; it++) {
+      var acc = [[0, 0, 0, 0], [0, 0, 0, 0]];
+      px.forEach(function (p, i) { var a = dE(p[3], c[0]) <= dE(p[3], c[1]) ? 0 : 1; asig[i] = a; acc[a][0] += p[3][0]; acc[a][1] += p[3][1]; acc[a][2] += p[3][2]; acc[a][3]++; });
+      c = acc.map(function (a, i) { return a[3] ? [a[0] / a[3], a[1] / a[3], a[2] / a[3]] : c[i]; });
+    }
+    var grupos = [0, 1].map(function (gi) {
+      var sel = px.filter(function (p, i) { return asig[i] === gi; });
+      if (!sel.length) return null;
+      var m = [0, 0, 0]; sel.forEach(function (p) { m[0] += p[0]; m[1] += p[1]; m[2] += p[2]; });
+      return { n: sel.length, rgb: [Math.round(m[0] / sel.length), Math.round(m[1] / sel.length), Math.round(m[2] / sel.length)] };
+    }).filter(Boolean).sort(function (a, b2) { return b2.n - a.n; });
+    var out = [grupos[0].rgb];
+    if (grupos[1] && grupos[1].n >= px.length * 0.25 && dE(lab.apply(null, grupos[0].rgb), lab.apply(null, grupos[1].rgb)) > 25) out.push(grupos[1].rgb);
+    return out;
+  }
+
   /* ---------- cámara en la mano: buscar a los porteros por el color ----------
      Con el móvil siguiendo el balón no se puede situar a cada jugador en el campo,
      pero si se ve a un portero, la jugada está cerca de su portería; y si está tirado, ha habido tiro. */
   function Mano(o) {
     this.W = o.W; this.H = o.H;
-    var cols = [[3, o.gkN], [4, o.gkR], [1, o.nos], [2, o.riv]].filter(function (c) { return c[1]; })
+    var cols = [[3, o.gkN], [4, o.gkR], [1, o.nos], [2, o.riv], [3, o.gkN2], [4, o.gkR2], [1, o.nos2], [2, o.riv2]].filter(function (c) { return c[1]; })
       .map(function (c) { return [c[0], lab(c[1][0], c[1][1], c[1][2])]; });
     /* tabla de colores (32 niveles por canal) para no calcular el color de cada píxel */
     this.lut = new Uint8Array(32768);
     for (var r = 0; r < 32; r++) for (var g = 0; g < 32; g++) for (var b = 0; b < 32; b++) {
-      var L = lab(r * 8 + 4, g * 8 + 4, b * 8 + 4), best = 0, bd = 1e9, sd = 1e9;
-      for (var i = 0; i < cols.length; i++) { var dd = dE(L, cols[i][1]); if (dd < bd) { sd = bd; bd = dd; best = cols[i][0]; } else if (dd < sd) sd = dd; }
-      this.lut[(r << 10) | (g << 5) | b] = bd < 22 && bd < sd * 0.7 ? best : 0;
+      var L = lab(r * 8 + 4, g * 8 + 4, b * 8 + 4), best = 0, bd = 1e9, sd = 1e9, i, dd;
+      for (i = 0; i < cols.length; i++) { dd = dE(L, cols[i][1]); if (dd < bd) { bd = dd; best = cols[i][0]; } }
+      for (i = 0; i < cols.length; i++) { if (cols[i][0] === best) continue; dd = dE(L, cols[i][1]); if (dd < sd) sd = dd; }
+      this.lut[(r << 10) | (g << 5) | b] = bd < (o.lim || 22) && bd < sd * 0.7 ? best : 0;
     }
     this.cls = new Uint8Array(this.W * this.H);
     this.vis = new Uint8Array(this.W * this.H);
@@ -1946,9 +2013,34 @@ var Vision = (function () {
       return { tm: x.tm, t0: x.t0, t1: x.t1, tiro: x.tirado >= 2, ruido: !!r };
     }).sort(function (a, b) { return a.t0 - b.t0; });
   }
+  /* Con IA: quién tiene el balón cuando se ve (1 tú, 2 rival), agrupado en tramos */
+  function posesiones(samples) {
+    var seq = samples.filter(function (s) { return s.b && s.b[2]; }).map(function (s) { return [s.t, s.b[2]]; }), out = [];
+    seq.forEach(function (q) {
+      var l = out[out.length - 1];
+      if (l && l.e === q[1] && q[0] - l.t1 <= 2.5) { l.t1 = q[0]; l.n++; } else out.push({ e: q[1], t0: q[0], t1: q[0], n: 1 });
+    });
+    return out;
+  }
+  function iaResumen(samples) {
+    var con = samples.filter(function (s) { return s.n; });
+    if (!con.length) return null;
+    var vis = con.filter(function (s) { return s.n[0] + s.n[1] >= 2; }), sup = 0, inf = 0, ig = 0, mn = 0, mr = 0;
+    vis.forEach(function (s) { if (s.n[0] > s.n[1]) sup++; else if (s.n[0] < s.n[1]) inf++; else ig++; mn += s.n[0]; mr += s.n[1]; });
+    var bal = con.filter(function (s) { return s.b; }), pb = bal.filter(function (s) { return s.b[2]; });
+    var pc = function (x, t) { return t ? Math.round((x / t) * 100) : 0; };
+    var tp = 0, tc = 0; con.forEach(function (s) { if (s.p != null) { tp += s.p; tc += s.n[0] + s.n[1]; } });
+    return {
+      dudoso: tp > 0 && tc / tp < 0.5,
+      n: con.length, vis: vis.length, sup: pc(sup, vis.length), inf: pc(inf, vis.length), ig: pc(ig, vis.length),
+      mediaNos: vis.length ? Math.round((mn / vis.length) * 10) / 10 : 0, mediaRiv: vis.length ? Math.round((mr / vis.length) * 10) / 10 : 0,
+      balon: pc(bal.length, con.length), posNos: pb.length >= 3 ? pc(pb.filter(function (s) { return s.b[2] === 1; }).length, pb.length) : null
+    };
+  }
   function resumenMano(samples, aud, total) {
     var tr = tramosMano(samples, aud), dur = function (tm) { return tr.filter(function (x) { return x.tm === tm; }).reduce(function (a, x) { return a + x.t1 - x.t0 + 0.25; }, 0); };
     return {
+      ia: iaResumen(samples),
       tramos: tr, total: total,
       cercaRival: total ? Math.round((dur(4) / total) * 100) : 0, cercaPropia: total ? Math.round((dur(3) / total) * 100) : 0,
       llegadas: [tr.filter(function (x) { return x.tm === 4; }).length, tr.filter(function (x) { return x.tm === 3; }).length],
@@ -1964,6 +2056,13 @@ var Vision = (function () {
     ruido.forEach(function (r) {
       if (tr.some(function (x) { return r[0] >= x.t0 - 3 && r[0] <= x.t1 + 2; })) return;
       out.push({ k: "ruido", t: r[0], s: r[1] });
+    });
+    /* con IA: cambios de quién lleva el balón y conducciones */
+    var ps = posesiones(samples);
+    ps.forEach(function (p, i) {
+      var prev = ps[i - 1];
+      if (prev && prev.e !== p.e && p.t0 - prev.t1 <= 4) out.push({ k: p.e === 1 ? "rec" : "per", t: Math.max(0, p.t0 - 0.5) });
+      if (p.e === 1 && p.n >= 3 && p.t1 - p.t0 >= 1) out.push({ k: "con", t: p.t0, dur: p.t1 - p.t0 });
     });
     return out.sort(function (a, b) { return a.t - b.t; });
   }
@@ -2341,7 +2440,7 @@ var Vision = (function () {
     return out.sort(function (a, b) { return a.t - b.t; });
   }
 
-  return { homography: homography, apply: apply, invert: invert, lab: lab, dE: dE, muestra: muestra, Campo: Campo, Mano: Mano, tramosMano: tramosMano, resumenMano: resumenMano, momentosMano: momentosMano, dirPorteros: dirPorteros, audioEventos: audioEventos, codificar: codificar, decodificar: decodificar, saques: saques, resumen: resumen, momentos: momentos, iniciosParte: iniciosParte, parteDe: parteDe, UNIT: UNIT };
+  return { homography: homography, apply: apply, invert: invert, lab: lab, dE: dE, muestra: muestra, Campo: Campo, Mano: Mano, tramosMano: tramosMano, posesiones: posesiones, coloresCamiseta: coloresCamiseta, resumenMano: resumenMano, momentosMano: momentosMano, dirPorteros: dirPorteros, audioEventos: audioEventos, codificar: codificar, decodificar: decodificar, saques: saques, resumen: resumen, momentos: momentos, iniciosParte: iniciosParte, parteDe: parteDe, UNIT: UNIT };
 })();
 
 /* =========================================================
@@ -2353,7 +2452,7 @@ var Vision = (function () {
   const IOS = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
   const INSTALADA = window.navigator.standalone === true || (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches);
   const KEY = "mister_v1";
-  const TABS = ["inicio", "crear", "biblioteca", "sesiones", "partidos", "equipo"];
+  const TABS = ["inicio", "crear", "biblioteca", "sesiones", "partidos", "pizarra", "equipo"];
   const BLOQ = { cal: "Calentamiento", por: "Porteros · en paralelo", pri: "Parte principal", vc: "Vuelta a la calma", comp: "Compensatorio · suplentes" };
   const BORDER = ["cal", "por", "pri", "vc", "comp"];
   const INT_N = ["", "Muy baja", "Baja", "Media", "Alta", "Máxima"];
@@ -2375,6 +2474,8 @@ var Vision = (function () {
   const lvl = (rpe) => (rpe <= 2.5 ? 1 : rpe <= 4 ? 2 : rpe <= 6 ? 3 : rpe <= 7.5 ? 4 : 5);
 
   const I = {
+    trash: '<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>',
+    board: '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 12h18"/><circle cx="12" cy="12" r="3"/><path d="M9 3v3h6V3M9 21v-3h6v3"/>',
     home: '<path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/>',
     plus: '<path d="M12 5v14M5 12h14"/>',
     book: '<path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 19V5"/><path d="M8 7h7M8 11h7"/>',
@@ -3275,7 +3376,7 @@ var Vision = (function () {
     try { raw = JSON.parse(localStorage.getItem(VAK(m)) || "null"); } catch (e) { raw = null; }
     if (!raw) return null;
     const aud = raw.a || { ruido: [], silbato: [], ok: false };
-    if (raw.modo === "mano") vaCache = { id: m.id, ts: a.ts, modo: "mano", samples: raw.g || [], total: raw.total || 0, aud, sq: [] };
+    if (raw.modo === "mano") vaCache = { id: m.id, ts: a.ts, modo: "mano", ia: !!raw.ia, samples: raw.g || [], total: raw.total || 0, aud, sq: [] };
     else { const samples = Vision.decodificar(raw.s); vaCache = { id: m.id, ts: a.ts, modo: "fijo", samples, aud, sq: Vision.saques(samples) }; }
     return vaCache;
   }
@@ -3323,7 +3424,8 @@ var Vision = (function () {
   }
   const momBtns = (x, key) => {
     const b = (v, l) => `<button class="btn sm" data-a="vaTag" data-k="${key}" data-t="${x.t}" data-v="${v}">${l}</button>`;
-    const l = x.k === "area" && x.quien === "nos" ? [["gol", "Gol"], ["tiro_p", "Tiro a puerta"], ["tiro_f", "Tiro fuera"], ["ocasion", "Ocasión"]]
+    const l = x.k === "rec" ? [["recup", "Recuperación"]] : x.k === "per" ? [["perdida", "Pérdida"]] : x.k === "con" ? [["conduccion", "Conducción"], ["regate", "Regate"]]
+      : x.k === "area" && x.quien === "nos" ? [["gol", "Gol"], ["tiro_p", "Tiro a puerta"], ["tiro_f", "Tiro fuera"], ["ocasion", "Ocasión"]]
       : x.k === "area" ? [["gol_r", "Gol rival"], ["tiro_r", "Tiro a puerta"], ["tiro_rf", "Tiro fuera"], ["parada", "Parada"]]
       : [["gol", "Gol nuestro"], ["gol_r", "Gol rival"], ["ocasion", "Ocasión"]];
     return `<span class="vabtn">${l.map((y) => b(y[0], y[1])).join("")}<button class="iconbtn sm" data-a="vaDis" data-k="${key}" aria-label="Descartar">${ic("close")}</button></span>`;
@@ -3332,16 +3434,20 @@ var Vision = (function () {
     const c = m.video.cal || {}, r = Vision.resumenMano(D.samples, D.aud, D.total);
     const mom = Vision.momentosMano(D.samples, D.aud).filter((x) => (m.video.hecho || []).indexOf(x.k + ":" + Math.round(x.t)) < 0);
     const st = (n, l) => `<div class="stat"><b>${n}</b><span>${l}</span></div>`;
-    const lbl = (x) => x.k === "ruido" ? "Mucho jaleo: ¿gol u ocasión?"
+    const lbl = (x) => x.k === "rec" ? "Posible recuperación de tu equipo" : x.k === "per" ? "Posible pérdida de balón" : x.k === "con" ? "Posible conducción de tu equipo" : x.k === "ruido" ? "Mucho jaleo: ¿gol u ocasión?"
       : x.quien === "nos" ? (x.tiro ? "Posible tiro a puerta tuyo (el portero rival se tira)" : x.ruido ? "Llegada al área rival con jaleo: ¿ocasión?" : "Llegada al área rival")
       : (x.tiro ? "Posible tiro a puerta del rival (tu portero se tira)" : x.ruido ? "Llegada del rival a tu área con jaleo" : "Llegada del rival a tu área");
     return `<div class="card-h"><h2>Análisis automático</h2><button class="btn sm" data-a="vaOpen">Repetir</button></div>
-      <p class="muted" style="font-size:14px">Vídeo grabado con el móvil en la mano: Míster se fija en los porteros para saber cuándo llega la jugada a cada área y si se tiran.</p>
+      <p class="muted" style="font-size:14px">${D.ia ? "Analizado con la IA del móvil: reconoce a los jugadores por persona y equipo, a los porteros y, cuando lo ve, el balón." : "Vídeo grabado con el móvil en la mano: Míster se fija en los porteros para saber cuándo llega la jugada a cada área y si se tiran."}</p>
+      ${r.ia && r.ia.dudoso ? `<p class="note">La IA ve a los jugadores, pero no distingue bien las camisetas de los dos equipos en este vídeo. Repite el análisis tocando a un jugador cercano de cada equipo.</p>` : ""}
+      ${r.ia && !r.ia.dudoso ? `<div class="stats" style="grid-template-columns:repeat(3,1fr)">${st(r.ia.mediaNos + " – " + r.ia.mediaRiv, "Jugadores cerca de la jugada (tú – rival)")}${st(r.ia.sup + "%", "Más jugadores que el rival")}${st(r.ia.inf + "%", "Menos jugadores que el rival")}</div>
+        <p class="muted" style="font-size:14px">Balón visto en el ${r.ia.balon}% de las imágenes${r.ia.posNos != null ? ` · cuando se ve, lo tiene tu equipo el ${r.ia.posNos}%` : ""}.</p>` : ""}
       <div class="stats" style="grid-template-columns:repeat(2,1fr)">${c.gkR ? st(r.llegadas[0] + (r.tiros[0] ? ` <small>· ${r.tiros[0]} tiro${r.tiros[0] > 1 ? "s" : ""}</small>` : ""), "Llegadas al área rival") : ""}${c.gkN ? st(r.llegadas[1] + (r.tiros[1] ? ` <small>· ${r.tiros[1]} tiro${r.tiros[1] > 1 ? "s" : ""}</small>` : ""), "Llegadas del rival a tu área") : ""}</div>
       <div class="kv"><b>Momentos para revisar</b>${mom.length ? `<ul class="evlist va">${mom.map((x) => { const key = x.k + ":" + Math.round(x.t); return `<li><button class="link num" data-a="vgo" data-t="${x.t}">${hms(x.t)}</button><span>${lbl(x)}</span>${momBtns(x, key)}</li>`; }).join("")}</ul>` : `<p class="muted" style="font-size:14px">No hay momentos pendientes.</p>`}</div>
-      ${!c.gkN || !c.gkR ? `<p class="note">Solo has marcado ${c.gkN ? "tu portero" : "el portero rival"}: ${c.gkN ? "no se verán tus llegadas al área rival" : "no se verán las llegadas del rival a tu área"}. Repite y toca también ${c.gkN ? "al portero rival" : "a tu portero"} si sale en el vídeo.</p>` : ""}
+      ${!c.gkN && !c.gkR ? `<p class="note">No has marcado a los porteros: no se ven las llegadas a cada área ni los posibles tiros. Repite y tócalos si salen en el vídeo.</p>`
+        : !c.gkN || !c.gkR ? `<p class="note">Solo has marcado ${c.gkN ? "tu portero" : "el portero rival"}: ${c.gkN ? "no se verán tus llegadas al área rival" : "no se verán las llegadas del rival a tu área"}. Repite y toca también ${c.gkN ? "al portero rival" : "a tu portero"} si sale en el vídeo.</p>` : ""}
       ${!D.aud.ok ? `<p class="note">No se ha podido escuchar el audio del vídeo.</p>` : ""}
-      <p class="muted" style="font-size:13px">Pases, conducciones y recuperaciones no se pueden detectar solos con un vídeo grabado a mano: márcalos con los botones de arriba mientras lo ves (puedes ponerlo a 0,5×).</p>`;
+      <p class="muted" style="font-size:13px">${D.ia ? "La IA solo ve el balón cuando está cerca de la cámara, así que se le escapan jugadas. Los pases márcalos con los botones de arriba (puedes poner el vídeo a 0,5×)." : "Pases, conducciones y recuperaciones no se pueden detectar solos sin la IA: márcalos con los botones de arriba mientras lo ves."}</p>`;
   }
   function vaHtml(m) {
     const a = m.video.auto, D = vaData(m);
@@ -3432,7 +3538,8 @@ var Vision = (function () {
     });
     [["nos", "Tú"], ["riv", "Rival"], ["gkN", "Tu portero"], ["gkR", "Portero rival"]].forEach((x) => {
       const s = A.cal[x[0] + "P"]; if (!s || A.step !== "col") return;
-      const q = P(s), col = A.cal[x[0]];
+      const q = P(s), col = A.cal[x[0]], bx = A.cal[x[0] + "B"];
+      if (bx) { c.strokeStyle = `rgb(${col[0]},${col[1]},${col[2]})`; c.lineWidth = 3 * dpr; c.strokeRect(g.ox + bx[0] * g.iw, g.oy + bx[1] * g.ih, bx[2] * g.iw, bx[3] * g.ih); }
       c.fillStyle = `rgb(${col[0]},${col[1]},${col[2]})`; c.strokeStyle = "#fff"; c.lineWidth = 3 * dpr;
       c.beginPath(); c.arc(q[0], q[1] - 26 * dpr, 12 * dpr, 0, Math.PI * 2); c.fill(); c.stroke();
       c.fillStyle = "#fff"; c.font = `bold ${12 * dpr}px system-ui,sans-serif`; c.textAlign = "center"; c.fillText(x[1], q[0], q[1] - 46 * dpr);
@@ -3456,12 +3563,29 @@ var Vision = (function () {
     } else if (A.step === "col" && kind === "down") {
       if (nx < 0 || ny < 0 || nx > 1 || ny > 1) return;
       const sw = A.snap.width, sh = A.snap.height, data = A.snap.getContext("2d").getImageData(0, 0, sw, sh).data;
-      const col = Vision.muestra(data, sw, sh, nx * sw, ny * sh, 3);
-      A.cal[A.colFor] = col; A.cal[A.colFor + "P"] = [nx, ny];
-      const orden = A.modo === "mano" ? ["gkN", "gkR"] : ["nos", "riv", "gkN", "gkR"], sig = orden.find((k) => !A.cal[k]);
+      const X = nx * sw, Y = ny * sh, k = A.colFor;
+      /* si la IA ha encontrado a un jugador ahí, se aprende el color de su camiseta entera */
+      const box = (A.boxes || []).filter((b) => X >= b[0] - 6 && X <= b[0] + b[2] + 6 && Y >= b[1] - 6 && Y <= b[1] + b[3] + 6).sort((a, b) => a[2] * a[3] - b[2] * b[3])[0];
+      const cols = box ? Vision.coloresCamiseta(data, sw, sh, box) : null;
+      if (cols) { A.cal[k] = cols[0]; A.cal[k + "2"] = cols[1] || null; A.cal[k + "B"] = [box[0] / sw, box[1] / sh, box[2] / sw, box[3] / sh]; }
+      else { A.cal[k] = Vision.muestra(data, sw, sh, X, Y, 3); A.cal[k + "2"] = null; A.cal[k + "B"] = null; }
+      A.cal[k + "P"] = [nx, ny];
+      const orden = ["nos", "riv", "gkN", "gkR"], sig = orden.find((k) => !A.cal[k]);
       if (sig) A.colFor = sig;
       vaRender();
     }
+  }
+  /* Con la IA cargada, busca a las personas de la imagen para tocar a un jugador entero */
+  function vaDetSnap() {
+    const A = UI.va; if (!A || !A.snap) return;
+    const snap = A.snap, info = (x) => { const e = $("#vaia"); if (e) e.textContent = x; };
+    if (!iaDet) info("Cargando la IA para reconocer a los jugadores…");
+    iaCargar().then((det) => det.detect(snap, 40, 0.35)).then((r) => {
+      if (!UI.va || UI.va.snap !== snap) return;
+      UI.va.boxes = r.filter((d) => d.class === "person").map((d) => d.bbox);
+      info(UI.va.boxes.length ? "La IA ve " + UI.va.boxes.length + " personas en esta imagen: toca a un jugador." : "La IA no ve jugadores en esta imagen: prueba con otra.");
+      vaDraw();
+    }).catch(() => info(""));
   }
   function vaButtons() {
     const A = UI.va, b = $("#vanext");
@@ -3489,9 +3613,9 @@ var Vision = (function () {
     const nav = `<button class="btn" data-a="vaFrame" data-d="-1">← Imagen anterior</button><button class="btn" data-a="vaFrame" data-d="1">Imagen siguiente →</button>`;
     let body = "";
     if (A.step === "modo") body = `<h2>¿Cómo está grabado?</h2>
-      <button class="opt-big${A.modo === "mano" ? " on" : ""}" data-a="vaModo" data-v="mano"><b>Con el móvil en la mano</b><span>Siguiendo el balón, acercando y alejando. Míster se fija en los porteros: llegadas a cada área y cuándo se tiran (posibles tiros).</span></button>
+      <button class="opt-big${A.modo === "mano" ? " on" : ""}" data-a="vaModo" data-v="mano"><b>Con el móvil en la mano</b><span>Siguiendo el balón. La IA del móvil reconoce a los jugadores y, cuando lo ve, el balón: llegadas a cada área, posibles tiros, recuperaciones, pérdidas y conducciones, y cuántos sois cerca de la jugada.</span></button>
       <button class="opt-big${A.modo === "fijo" ? " on" : ""}" data-a="vaModo" data-v="fijo"><b>Con el móvil fijo en trípode</b><span>Viendo todo el campo sin mover la cámara. Además: mapas de calor, zonas, largo y ancho del equipo y saques de centro.</span></button>
-      <p class="muted">Pases, conducciones y recuperaciones no se detectan solos: márcalos con los botones mientras ves el vídeo.</p>
+      <p class="muted">Todo lo que detecte te lo propone para que lo confirmes con un toque. Los pases no los detecta: márcalos con los botones mientras ves el vídeo.</p>
       <button class="btn primary big" data-a="vaStep" data-v="${A.modo === "mano" ? "col" : "esq"}">Siguiente</button>`;
     else if (A.step === "esq") body = `<h2>Marca el campo</h2><p>Toca las <b>4 esquinas</b> en este orden: <b>1</b> lejana izquierda, <b>2</b> lejana derecha, <b>3</b> cercana derecha y <b>4</b> cercana izquierda. Si una esquina queda fuera de la imagen, tócala en la zona gris donde estaría. Puedes arrastrar los puntos.</p>
       <div class="vacv"><canvas id="vacv" aria-label="Imagen del campo para marcar las esquinas"></canvas></div>
@@ -3500,13 +3624,14 @@ var Vision = (function () {
       <button class="btn primary big" id="vanext" data-a="vaStep" data-v="col"${A.cal.pts.length < 4 ? " disabled" : ""}>Siguiente</button>`;
     else if (A.step === "col") {
       const mano = A.modo === "mano", quien = { nos: "un jugador de tu equipo", riv: "un jugador del rival", gkN: "tu portero", gkR: "el portero rival" }[A.colFor];
-      const ok = mano ? !!(A.cal.gkN || A.cal.gkR) : !!(A.cal.nos && A.cal.riv);
-      const chips = (mano ? [["gkN", "Tu portero"], ["gkR", "Portero rival"]] : [["nos", "Tu equipo"], ["riv", "Rival"], ["gkN", "Tu portero"], ["gkR", "Portero rival"]])
+      const ok = mano ? !!((A.cal.nos && A.cal.riv) || A.cal.gkN || A.cal.gkR) : !!(A.cal.nos && A.cal.riv);
+      const chips = [["nos", "Tu equipo"], ["riv", "Rival"], ["gkN", "Tu portero"], ["gkR", "Portero rival"]]
         .map((x) => `<button class="chip${A.colFor === x[0] ? " on" : ""}" data-a="vaCol" data-v="${x[0]}">${sw(x[0])}${x[1]}</button>`).join("");
-      body = `<h2>${mano ? "Camisetas de los porteros" : "Colores de las camisetas"}</h2>
-        <p>Elige arriba de quién es y toca en la imagen la camiseta de <b>${quien}</b>. ${mano ? "Si un portero no sale en esta imagen, busca otra con los botones." : "Los porteros son opcionales: si los marcas, Míster sabe solo hacia dónde ataca cada equipo."}</p>
+      body = `<h2>Colores de las camisetas</h2>
+        <p>Elige arriba de quién es y toca en la imagen la camiseta de <b>${quien}</b>. ${mano ? "Toca a un jugador y Míster aprende los colores de su camiseta (también si es a rayas). Marca los dos equipos y los porteros que salgan; si alguien no sale en esta imagen, busca otra con los botones." : "Los porteros son opcionales: si los marcas, Míster sabe solo hacia dónde ataca cada equipo."}</p>
         <div class="chips">${chips}</div>
         <div class="vacv"><canvas id="vacv" aria-label="Imagen del vídeo para tocar las camisetas"></canvas></div>
+        <p class="muted" id="vaia" aria-live="polite">${A.boxes ? "La IA ve " + A.boxes.length + " personas en esta imagen: toca a un jugador." : ""}</p>
         <div class="row">${nav}</div>
         <div class="row"><button class="btn" data-a="vaStep" data-v="${mano ? "modo" : "esq"}">Volver</button>${A.cal[A.colFor] ? `<button class="btn" data-a="vaColDel">Quitar este color</button>` : ""}</div>
         ${mano ? `<button class="btn primary big" data-a="vaGo"${ok ? "" : " disabled"}>${ic("play")} Analizar ahora</button><p class="muted">Deja la app abierta y la pantalla encendida mientras analiza.</p>`
@@ -3546,7 +3671,7 @@ var Vision = (function () {
   /* Empieza dentro del toque (iPhone solo deja reproducir con sonido así) */
   function vaStart() {
     const A = UI.va, m = curM(); if (!A || !m || !UI.vid) return;
-    m.video.cal = { modo: A.modo, pts: A.cal.pts, nos: A.cal.nos, riv: A.cal.riv, nosP: A.cal.nosP, rivP: A.cal.rivP, gkN: A.cal.gkN, gkR: A.cal.gkR, gkNP: A.cal.gkNP, gkRP: A.cal.gkRP, dir: A.cal.dir, cambio: A.cal.cambio !== false };
+    m.video.cal = { modo: A.modo, pts: A.cal.pts, nos: A.cal.nos, riv: A.cal.riv, nosP: A.cal.nosP, rivP: A.cal.rivP, gkN: A.cal.gkN, gkR: A.cal.gkR, gkNP: A.cal.gkNP, gkRP: A.cal.gkRP, nos2: A.cal.nos2, riv2: A.cal.riv2, gkN2: A.cal.gkN2, gkR2: A.cal.gkR2, dir: A.cal.dir, cambio: A.cal.cambio !== false };
     save();
     const mv = $("#vid"); if (mv) mv.pause();
     A.step = "run"; A.cancel = false;
@@ -3562,7 +3687,12 @@ var Vision = (function () {
     try { ac = new (window.AudioContext || window.webkitAudioContext)(); ac.resume().catch(() => {}); } catch (e) { ac = null; }
     v.play().then(() => v.pause()).catch(() => {});
     keepOn(true);
-    (A.modo === "mano" ? vaRunMano(m, v, ac) : vaRun(m, v, ac)).catch((e) => { toast("No se ha podido analizar: " + (e && e.message ? e.message : e)); }).finally(() => {
+    const conIA = async () => {
+      let det = null;
+      if (!window.__sinIA) { try { det = await iaCargar((x) => { const e = $("#vatxt"); if (e) e.textContent = x; }); } catch (e) { det = null; } }
+      return det ? vaRunManoIA(m, v, ac, det) : vaRunMano(m, v, ac);
+    };
+    (A.modo === "mano" ? conIA() : vaRun(m, v, ac)).catch((e) => { toast("No se ha podido analizar: " + (e && e.message ? e.message : e)); }).finally(() => {
       keepOn(false);
       try { v.pause(); v.removeAttribute("src"); v.load(); } catch (e) { /* nada */ }
       try { if (ac) ac.close(); } catch (e) { /* nada */ }
@@ -3718,6 +3848,554 @@ var Vision = (function () {
     toast("Análisis terminado");
   }
 
+
+
+  /* ---------- IA dentro del móvil (TensorFlow.js + COCO-SSD de Google, gratis y sin internet) ----------
+     Reconoce personas y el balón en cada imagen. Los archivos van dentro de la app (carpeta ia/). */
+  let iaDet = null, iaCargando = null;
+  function iaScript(src) {
+    return new Promise((res, rej) => { const s = document.createElement("script"); s.src = src; s.onload = res; s.onerror = () => rej(new Error("no está " + src)); document.head.appendChild(s); });
+  }
+  function f16(h) {
+    const s = (h & 0x8000) ? -1 : 1, e = (h >> 10) & 0x1f, f = h & 0x3ff;
+    if (e === 0) return s * f * 5.960464477539063e-8;
+    if (e === 31) return f ? NaN : s * Infinity;
+    return s * Math.pow(2, e - 15) * (1 + f / 1024);
+  }
+  function iaCargar(aviso) {
+    if (iaDet) return Promise.resolve(iaDet);
+    if (iaCargando) return iaCargando;
+    iaCargando = (async () => {
+      if (aviso) aviso("Cargando la IA…");
+      if (!window.tf) await iaScript("ia/tf.min.js");
+      if (!window.cocoSsd) await iaScript("ia/coco-ssd.min.js");
+      if (!window.MISTER_IA || !window.MISTER_IA.lite) await iaScript("ia/modelo_lite.js");
+      const M = window.MISTER_IA.lite, bin = atob(M.w), u8 = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+      /* los pesos vienen en float16 para ocupar la mitad: volver a float32 */
+      const tabla = new Float32Array(65536); for (let h = 0; h < 65536; h++) tabla[h] = f16(h);
+      const tam = { float32: 4, int32: 4, bool: 1, uint8: 1 }, trozos = []; let off = 0, total = 0;
+      M.art.weightSpecs.forEach((sp, k) => {
+        const n = sp.shape.reduce((a, b) => a * b, 1);
+        if (M.h[k]) {
+          const out = new Float32Array(n);
+          for (let i = 0; i < n; i++) out[i] = tabla[u8[off + 2 * i] | (u8[off + 2 * i + 1] << 8)];
+          off += 2 * n; trozos.push(new Uint8Array(out.buffer)); total += 4 * n;
+        } else {
+          const qb = sp.quantization ? ({ uint8: 1, uint16: 2, float16: 2 })[sp.quantization.dtype] : tam[sp.dtype] || 4, len = n * qb;
+          trozos.push(u8.slice(off, off + len)); off += len; total += len;
+        }
+      });
+      const buf = new Uint8Array(total); let p = 0; trozos.forEach((t) => { buf.set(t, p); p += t.length; });
+      const art = Object.assign({}, M.art, { weightData: buf.buffer });
+      delete M.w;
+      iaDet = await cocoSsd.load({ base: "lite_mobilenet_v2", modelUrl: tf.io.fromMemory(art) });
+      return iaDet;
+    })();
+    iaCargando.catch(() => { iaCargando = null; });
+    return iaCargando;
+  }
+  /* Equipo de una persona por el color de la camiseta (zona del pecho) */
+  function iaEquipo(lut, data, W, H, b) {
+    const x0 = Math.max(0, Math.round(b[0] + b[2] * 0.22)), x1 = Math.min(W - 1, Math.round(b[0] + b[2] * 0.78));
+    const y0 = Math.max(0, Math.round(b[1] + b[3] * 0.14)), y1 = Math.min(H - 1, Math.round(b[1] + b[3] * 0.52));
+    const v = [0, 0, 0, 0, 0]; let n = 0;
+    const paso = Math.max(1, Math.round((x1 - x0) / 14));
+    for (let y = y0; y <= y1; y += paso) for (let x = x0; x <= x1; x += paso) {
+      const k = (y * W + x) * 4; n++;
+      v[lut[((data[k] >> 3) << 10) | ((data[k + 1] >> 3) << 5) | (data[k + 2] >> 3)]]++;
+    }
+    let t = 0, s = 0; for (let i = 1; i <= 4; i++) { if (v[i] > v[t]) { s = t; t = i; } else if (v[i] > v[s] && i !== t) s = i; }
+    return t && v[t] >= Math.max(2, n * 0.1) && v[t] >= 1.5 * (s ? v[s] : 0) ? t : 0;
+  }
+  /* Vídeo grabado a mano con IA: jugadores, porteros y balón (2-4 imágenes por segundo) */
+  async function vaRunManoIA(m, v, ac, det) {
+    const A = UI.va, txt = (s) => { const e = $("#vatxt"); if (e) e.textContent = s; };
+    if (!(v.readyState >= 1)) await once(v, "loadedmetadata", 15000);
+    if (!v.videoWidth) throw new Error("el vídeo no se puede leer");
+    const cal = m.video.cal, port = v.videoHeight > v.videoWidth;
+    const L = 1280, W = port ? Math.round((L * v.videoWidth) / v.videoHeight) : L, H = port ? L : Math.round((L * v.videoHeight) / v.videoWidth);
+    const mano = new Vision.Mano({ W: 4, H: 4, gkN: cal.gkN, gkR: cal.gkR, nos: cal.nos, riv: cal.riv, gkN2: cal.gkN2, gkR2: cal.gkR2, nos2: cal.nos2, riv2: cal.riv2, lim: 26 });
+    /* los porteros se buscan también por su mancha de color: la IA a veces no ve a un portero tirado */
+    const W2 = port ? 360 : 640, H2 = Math.round((W2 * v.videoHeight) / v.videoWidth);
+    const porteros = new Vision.Mano({ W: W2, H: H2, gkN: cal.gkN, gkR: cal.gkR });
+    const cv2 = document.createElement("canvas"); cv2.width = W2; cv2.height = H2;
+    const cx2 = cv2.getContext("2d", { willReadFrequently: true });
+    const cv = document.createElement("canvas"); cv.width = W; cv.height = H;
+    const cx = cv.getContext("2d", { willReadFrequently: true });
+    /* trozos de la imagen para buscar el balón, que es pequeño */
+    const NT = 4, tl = port ? [W, Math.round((H / NT) * 1.25)] : [Math.round((W / NT) * 1.25), H];
+    const tc = document.createElement("canvas"); tc.width = tl[0]; tc.height = tl[1];
+    const tx = tc.getContext("2d");
+    const ov = $("#vaov"); if (ov) { ov.width = W; ov.height = H; }
+    const oc = ov ? ov.getContext("2d") : null;
+    const segs = vaSegs(m, v.duration), total = segs.reduce((a, s) => a + s[1] - s[0], 0);
+    const fps = window.__vaFps || (total > 300 ? 2 : 3), oido = vaOido(v, ac);
+    if (ac) { try { await ac.resume(); } catch (e) { /* nada */ } }
+    const samples = []; let hecho = 0, n = 0;
+    for (const s of segs) {
+      if (A.cancel) break;
+      await vaSeek(v, s[0]);
+      v.playbackRate = 2;
+      let next = s[0];
+      while (!A.cancel && !v.ended && v.currentTime < s[1]) {
+        try { if (v.paused) await v.play(); } catch (e) { v.muted = true; try { await v.play(); } catch (e2) { /* nada */ } }
+        await dormir(25);
+        const t = v.currentTime;
+        if (oido && !v.paused) oido.oir(t);
+        if (t < next) continue;
+        v.pause(); next = Math.floor(t * fps) / fps + 1 / fps; n++;
+        cx.drawImage(v, 0, 0, W, H);
+        const data = cx.getImageData(0, 0, W, H).data;
+        const per = (await det.detect(cv, 30, 0.35)).filter((d) => d.class === "person" && d.bbox[3] > H * 0.04);
+        let bal = null;
+        for (let k = 0; k < NT; k++) {
+          const o = port ? [0, Math.round((k * (H - tl[1])) / (NT - 1))] : [Math.round((k * (W - tl[0])) / (NT - 1)), 0];
+          tx.drawImage(cv, o[0], o[1], tl[0], tl[1], 0, 0, tl[0], tl[1]);
+          (await det.detect(tc, 10, 0.25)).forEach((d) => { if (d.class === "sports ball" && (!bal || d.score > bal.s)) bal = { s: d.score, x: o[0] + d.bbox[0] + d.bbox[2] / 2, y: o[1] + d.bbox[1] + d.bbox[3] / 2 }; });
+        }
+        const jug = per.map((d) => ({ b: d.bbox, e: iaEquipo(mano.lut, data, W, H, d.bbox) }));
+        cx2.drawImage(cv, 0, 0, W2, H2);
+        const g = (cal.gkN || cal.gkR) ? porteros.frame(cx2.getImageData(0, 0, W2, H2).data) : [];
+        /* quién tiene el balón: el jugador con los pies más cerca */
+        let pos = 0;
+        if (bal) {
+          let bd = 1e9;
+          jug.forEach((q) => { if (!q.e) return; const fx = q.b[0] + q.b[2] / 2, fy = q.b[1] + q.b[3], dd = Math.hypot(fx - bal.x, fy - bal.y) / q.b[3]; if (dd < 0.7 && dd < bd) { bd = dd; pos = q.e === 3 ? 1 : q.e === 4 ? 2 : q.e; } });
+        }
+        samples.push({ t: Math.round(t * 4) / 4, g, p: jug.length, n: [jug.filter((q) => q.e === 1).length, jug.filter((q) => q.e === 2).length], b: bal ? [+(bal.x / W).toFixed(2), +(bal.y / H).toFixed(2), pos] : null });
+        if (oc) {
+          oc.clearRect(0, 0, W, H); oc.lineWidth = 4;
+          jug.forEach((q) => { oc.strokeStyle = q.e === 1 ? "#f0561b" : q.e === 2 ? "#3b6fd8" : q.e >= 3 ? "#ffd23f" : "rgba(255,255,255,.35)"; oc.strokeRect(q.b[0], q.b[1], q.b[2], q.b[3]); });
+          if (bal) { oc.strokeStyle = "#fff"; oc.lineWidth = 5; oc.beginPath(); oc.arc(bal.x, bal.y, 22, 0, 7); oc.stroke(); }
+        }
+        const pc = Math.min(100, ((hecho + Math.max(0, t - s[0])) / total) * 100);
+        const bar = $("#vabar"); if (bar) bar.style.width = pc.toFixed(1) + "%";
+        txt(hms(t) + " de " + hms(segs[segs.length - 1][1]) + " · " + Math.round(pc) + "%");
+      }
+      v.pause();
+      hecho += s[1] - s[0];
+    }
+    if (A.cancel) { toast("Análisis cancelado"); return; }
+    const aud = oido ? oido.eventos(1) : { ruido: [], silbato: [], ok: false };
+    localStorage.setItem(VAK(m), JSON.stringify({ modo: "mano", ia: 1, g: samples, a: aud, total: Math.round(total) }));
+    m.video.auto = { ts: Date.now(), modo: "mano", ia: 1, n, audio: aud.ok, dur: Math.round(total) };
+    m.video.hecho = [];
+    save();
+    toast("Análisis terminado");
+  }
+
+  /* ---------- PIZARRA TÁCTICA: formaciones y jugadas animadas ----------
+     Campo en vertical: tu portería abajo, atacáis hacia arriba. Coordenadas del campo de 0 a 1.
+     Una jugada guarda la posición inicial de cada ficha y su «pista» de movimiento [tiempo ms, x, y]
+     grabada con el dedo, con su ritmo real, para reproducirla como un vídeo. */
+  const PZ_FORM = {
+    f7: {
+      "1-2-3-1": [[0.3, 0.78], [0.7, 0.78], [0.17, 0.55], [0.5, 0.58], [0.83, 0.55], [0.5, 0.3]],
+      "1-3-2-1": [[0.2, 0.77], [0.5, 0.8], [0.8, 0.77], [0.32, 0.56], [0.68, 0.56], [0.5, 0.3]],
+      "1-3-1-2": [[0.2, 0.77], [0.5, 0.8], [0.8, 0.77], [0.5, 0.58], [0.32, 0.33], [0.68, 0.33]],
+      "1-2-1-2-1": [[0.3, 0.8], [0.7, 0.8], [0.5, 0.65], [0.18, 0.5], [0.82, 0.5], [0.5, 0.28]],
+      "1-3-3": [[0.2, 0.76], [0.5, 0.78], [0.8, 0.76], [0.2, 0.42], [0.5, 0.39], [0.8, 0.42]],
+      "1-2-2-2": [[0.3, 0.78], [0.7, 0.78], [0.3, 0.57], [0.7, 0.57], [0.3, 0.34], [0.7, 0.34]]
+    },
+    f11: {
+      "1-4-3-3": [[0.12, 0.78], [0.37, 0.8], [0.63, 0.8], [0.88, 0.78], [0.25, 0.58], [0.5, 0.61], [0.75, 0.58], [0.17, 0.31], [0.5, 0.27], [0.83, 0.31]],
+      "1-4-4-2": [[0.12, 0.78], [0.37, 0.8], [0.63, 0.8], [0.88, 0.78], [0.12, 0.55], [0.37, 0.58], [0.63, 0.58], [0.88, 0.55], [0.37, 0.3], [0.63, 0.3]],
+      "1-4-2-3-1": [[0.12, 0.78], [0.37, 0.8], [0.63, 0.8], [0.88, 0.78], [0.37, 0.63], [0.63, 0.63], [0.17, 0.45], [0.5, 0.45], [0.83, 0.45], [0.5, 0.25]],
+      "1-3-5-2": [[0.25, 0.8], [0.5, 0.81], [0.75, 0.8], [0.08, 0.55], [0.3, 0.6], [0.5, 0.57], [0.7, 0.6], [0.92, 0.55], [0.37, 0.3], [0.63, 0.3]]
+    }
+  };
+  const PZ_DIM = { f7: [40, 60], f11: [68, 105] };
+  const PZ_MX = 0.05, PZ_MY = 0.035;
+  const pzFmtDef = () => (S.team.cat >= 3 ? "f11" : "f7");
+  const pzClone = (o) => JSON.parse(JSON.stringify(o));
+  function pzNueva(fmt) {
+    fmt = fmt || pzFmtDef();
+    const form = (S.team.pzForm && PZ_FORM[fmt][S.team.pzForm]) ? S.team.pzForm : Object.keys(PZ_FORM[fmt])[0];
+    const j = { id: null, nombre: "", fmt, form, fichas: [], pistas: {}, dib: [], dur: 0, riv: false };
+    pzFormacion(j, form);
+    j.fichas.push({ id: "b", k: "bal", x: 0.5, y: 0.5 });
+    return j;
+  }
+  /* Coloca a tu equipo en la formación (conserva los nombres asignados) */
+  function pzFormacion(j, form) {
+    const pos = [[0.5, 0.94]].concat(PZ_FORM[j.fmt][form]);
+    const nos = j.fichas.filter((f) => f.k === "nos");
+    j.fichas = j.fichas.filter((f) => f.k !== "nos");
+    pos.forEach((p, i) => {
+      const f = nos[i] || { id: "n" + Date.now().toString(36) + i, k: "nos" };
+      f.x = p[0]; f.y = p[1]; f.n = i + 1; f.gk = i === 0;
+      j.fichas.push(f);
+      delete j.pistas[f.id];
+    });
+    j.form = form;
+  }
+  function pzRivales(j, on) {
+    j.fichas = j.fichas.filter((f) => f.k !== "riv");
+    Object.keys(j.pistas).forEach((k) => { if (k[0] === "r") delete j.pistas[k]; });
+    j.riv = on;
+    if (!on) return;
+    const pos = [[0.5, 0.94]].concat(PZ_FORM[j.fmt][Object.keys(PZ_FORM[j.fmt])[0]]);
+    pos.forEach((p, i) => j.fichas.push({ id: "r" + i, k: "riv", x: 1 - p[0], y: 1 - p[1], gk: i === 0 }));
+  }
+  /* Posición de una ficha en el instante t (interpolando su pista) */
+  function pzPos(j, f, t) {
+    const p = j.pistas[f.id];
+    if (!p || !p.length || t < p[0][0]) return [f.x, f.y];
+    if (t >= p[p.length - 1][0]) { const l = p[p.length - 1]; return [l[1], l[2]]; }
+    let lo = 0, hi = p.length - 1;
+    while (hi - lo > 1) { const m = (lo + hi) >> 1; if (p[m][0] <= t) lo = m; else hi = m; }
+    const a = p[lo], b = p[hi], k = b[0] > a[0] ? (t - a[0]) / (b[0] - a[0]) : 0;
+    return [a[1] + (b[1] - a[1]) * k, a[2] + (b[2] - a[2]) * k];
+  }
+  function pzGeo(cv, j) {
+    const d = PZ_DIM[j.fmt], pw = cv.width / (1 + 2 * PZ_MX), ph = (pw * d[1]) / d[0];
+    return { pw, ph, ox: pw * PZ_MX, oy: ph * PZ_MY, r: pw * (j.fmt === "f7" ? 0.052 : 0.038) };
+  }
+  const pzAlto = (w, j) => { const d = PZ_DIM[j.fmt]; return Math.round(((w / (1 + 2 * PZ_MX)) * d[1] / d[0]) * (1 + 2 * PZ_MY)); };
+  function pzFlecha(c, pts, g, tipo, dpr) {
+    if (pts.length < 2) return;
+    const P = pts.map((p) => [g.ox + p[0] * g.pw, g.oy + p[1] * g.ph]);
+    c.save();
+    c.lineCap = "round"; c.lineJoin = "round";
+    c.strokeStyle = tipo === "carrera" ? "#ffd23f" : "#ffffff"; c.lineWidth = 3 * dpr;
+    if (tipo === "carrera") c.setLineDash([9 * dpr, 7 * dpr]);
+    c.beginPath();
+    if (tipo === "conduccion") {
+      /* línea ondulada = conducción */
+      let acc = 0; c.moveTo(P[0][0], P[0][1]);
+      for (let i = 1; i < P.length; i++) {
+        const a = P[i - 1], b = P[i], L = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1, nx = -(b[1] - a[1]) / L, ny = (b[0] - a[0]) / L;
+        for (let s = 0; s < L; s += 3 * dpr) { acc += 3 * dpr; const w = Math.sin(acc / (5 * dpr)) * 4 * dpr, k = s / L; c.lineTo(a[0] + (b[0] - a[0]) * k + nx * w, a[1] + (b[1] - a[1]) * k + ny * w); }
+      }
+    } else { c.moveTo(P[0][0], P[0][1]); P.slice(1).forEach((p) => c.lineTo(p[0], p[1])); }
+    c.stroke(); c.setLineDash([]);
+    /* punta de flecha */
+    const b = P[P.length - 1]; let a = P[P.length - 2];
+    for (let i = P.length - 2; i >= 0; i--) { a = P[i]; if (Math.hypot(b[0] - a[0], b[1] - a[1]) > 10 * dpr) break; }
+    const an = Math.atan2(b[1] - a[1], b[0] - a[0]), L = 13 * dpr;
+    c.fillStyle = c.strokeStyle; c.beginPath(); c.moveTo(b[0], b[1]);
+    c.lineTo(b[0] - L * Math.cos(an - 0.45), b[1] - L * Math.sin(an - 0.45)); c.lineTo(b[0] - L * Math.cos(an + 0.45), b[1] - L * Math.sin(an + 0.45)); c.closePath(); c.fill();
+    c.restore();
+  }
+  function pzDraw(cv, j, t, o) {
+    o = o || {};
+    const c = cv.getContext("2d"), dpr = o.dpr || 1, g = pzGeo(cv, j), d = PZ_DIM[j.fmt];
+    const X = (x) => g.ox + x * g.pw, Y = (y) => g.oy + y * g.ph;
+    c.fillStyle = "#24603a"; c.fillRect(0, 0, cv.width, cv.height);
+    for (let i = 0; i < 12; i++) { c.fillStyle = i % 2 ? "#2c7646" : "#30804c"; c.fillRect(g.ox, g.oy + (g.ph * i) / 12, g.pw, g.ph / 12 + 1); }
+    c.strokeStyle = "rgba(255,255,255,.9)"; c.lineWidth = Math.max(1.5, 2 * dpr);
+    c.strokeRect(g.ox, g.oy, g.pw, g.ph);
+    c.beginPath(); c.moveTo(g.ox, Y(0.5)); c.lineTo(g.ox + g.pw, Y(0.5)); c.stroke();
+    const cr = ((j.fmt === "f7" ? 6 : 9.15) / d[0]) * g.pw;
+    c.beginPath(); c.arc(X(0.5), Y(0.5), cr, 0, Math.PI * 2); c.stroke();
+    c.fillStyle = "#fff"; c.beginPath(); c.arc(X(0.5), Y(0.5), 2.5 * dpr, 0, 7); c.fill();
+    const A = j.fmt === "f7" ? { aw: 24, ad: 12, mw: 12, md: 5, pen: 9, gw: 6 } : { aw: 40.3, ad: 16.5, mw: 18.3, md: 5.5, pen: 11, gw: 7.32 };
+    [0, 1].forEach((lado) => {
+      const y0 = lado ? Y(1) : Y(0), s = lado ? -1 : 1;
+      const aw = (A.aw / d[0]) * g.pw, ad = (A.ad / d[1]) * g.ph, mw = (A.mw / d[0]) * g.pw, md = (A.md / d[1]) * g.ph, gw = (A.gw / d[0]) * g.pw;
+      c.strokeRect(X(0.5) - aw / 2, s > 0 ? y0 : y0 - ad, aw, ad);
+      c.strokeRect(X(0.5) - mw / 2, s > 0 ? y0 : y0 - md, mw, md);
+      c.beginPath(); c.arc(X(0.5), y0 + s * (A.pen / d[1]) * g.ph, 2.2 * dpr, 0, 7); c.fill();
+      c.strokeRect(X(0.5) - gw / 2, s > 0 ? y0 - g.oy * 0.6 : y0, gw, g.oy * 0.6);
+    });
+    /* dibujos y estelas */
+    (j.dib || []).forEach((dd) => pzFlecha(c, dd.p, g, dd.k, dpr));
+    if (o.trails) {
+      j.fichas.forEach((f) => {
+        const p = j.pistas[f.id]; if (!p || p.length < 2) return;
+        const hasta = o.trails === "todo" ? Infinity : t;
+        const pts = [[f.x, f.y]].concat(p.filter((s) => s[0] <= hasta).map((s) => [s[1], s[2]]));
+        if (o.trails !== "todo") pts.push(pzPos(j, f, t));
+        if (pts.length < 2) return;
+        c.save(); c.globalAlpha = 0.75; c.lineWidth = 2.2 * dpr; c.setLineDash(f.k === "bal" ? [2 * dpr, 5 * dpr] : [7 * dpr, 6 * dpr]);
+        c.strokeStyle = f.k === "nos" ? "#ffb08a" : f.k === "riv" ? "#a9c2ff" : "#ffffff";
+        c.beginPath(); c.moveTo(X(pts[0][0]), Y(pts[0][1])); pts.slice(1).forEach((q) => c.lineTo(X(q[0]), Y(q[1]))); c.stroke(); c.restore();
+      });
+    }
+    /* fichas (el balón encima) */
+    const orden = j.fichas.filter((f) => f.k !== "bal").concat(j.fichas.filter((f) => f.k === "bal"));
+    orden.forEach((f) => {
+      const q = pzPos(j, f, t), x = X(q[0]), y = Y(q[1]);
+      if (f.k === "bal") {
+        const rb = g.r * 0.5;
+        c.fillStyle = "#fff"; c.strokeStyle = "#111"; c.lineWidth = 1.5 * dpr;
+        c.beginPath(); c.arc(x, y, rb, 0, 7); c.fill(); c.stroke();
+        c.fillStyle = "#111"; c.beginPath(); c.arc(x, y, rb * 0.38, 0, 7); c.fill();
+        return;
+      }
+      const pl = f.jid ? S.players.find((p) => p.id === f.jid) : null;
+      c.save(); c.shadowColor = "rgba(0,0,0,.35)"; c.shadowBlur = 4 * dpr; c.shadowOffsetY = 1.5 * dpr;
+      c.fillStyle = f.k === "nos" ? (f.gk ? "#ffcf33" : "#f0561b") : (f.gk ? "#1b2f66" : "#2f62d0");
+      c.beginPath(); c.arc(x, y, g.r, 0, 7); c.fill(); c.restore();
+      c.strokeStyle = o.sel === f.id ? "#ffd23f" : "#fff"; c.lineWidth = (o.sel === f.id ? 3.5 : 2) * dpr;
+      c.beginPath(); c.arc(x, y, g.r, 0, 7); c.stroke();
+      const txt = f.k === "nos" ? String(pl ? pl.dorsal : f.n || "") : "";
+      if (txt) { c.fillStyle = f.gk ? "#222" : "#fff"; c.font = `800 ${Math.round(g.r * 0.95)}px system-ui,sans-serif`; c.textAlign = "center"; c.textBaseline = "middle"; c.fillText(txt, x, y + g.r * 0.05); }
+      if (pl) {
+        c.font = `700 ${Math.round(g.r * 0.62)}px system-ui,sans-serif`; c.textAlign = "center"; c.textBaseline = "top";
+        c.lineWidth = 3 * dpr; c.strokeStyle = "rgba(0,0,0,.6)"; c.strokeText(pl.nombre.split(" ")[0], x, y + g.r * 1.08);
+        c.fillStyle = "#fff"; c.fillText(pl.nombre.split(" ")[0], x, y + g.r * 1.08);
+      }
+    });
+    if (o.titulo) {
+      c.font = `800 ${Math.round(cv.width * 0.045)}px system-ui,sans-serif`; c.textAlign = "left"; c.textBaseline = "top";
+      c.lineWidth = 4 * dpr; c.strokeStyle = "rgba(0,0,0,.55)"; c.strokeText(o.titulo, g.ox + 6 * dpr, g.oy + 6 * dpr);
+      c.fillStyle = "#fff"; c.fillText(o.titulo, g.ox + 6 * dpr, g.oy + 6 * dpr);
+    }
+  }
+  const pzMiniCache = {};
+  function pzMini(j) {
+    const k = j.id + ":" + (j.ts || 0);
+    if (pzMiniCache[k]) return pzMiniCache[k];
+    try {
+      const cv = document.createElement("canvas"); cv.width = 132; cv.height = pzAlto(132, j);
+      pzDraw(cv, j, 0, { trails: "todo" });
+      pzMiniCache[k] = cv.toDataURL("image/png");
+    } catch (e) { pzMiniCache[k] = ""; }
+    return pzMiniCache[k];
+  }
+  function vPizarra() {
+    const js = (S.jugadas || []).slice().sort((a, b) => (b.ts || 0) - (a.ts || 0));
+    return `<header class="top"><div><p class="eyebrow">Táctica</p><h1>Pizarra</h1></div><button class="btn primary sm" data-a="pzNew">${ic("plus")} Jugada</button></header>
+      <section class="card"><p>Coloca a tus jugadores en su sitio, mueve con el dedo lo que tiene que hacer cada uno y reprodúcelo como un vídeo para que los niños lo vean.</p>
+        <div class="grid2"><button class="btn primary" data-a="pzNew" data-v="f7">Campo de fútbol 7</button><button class="btn" data-a="pzNew" data-v="f11">Campo de fútbol 11</button></div></section>
+      <p class="section-t">Mis jugadas (${js.length})</p>
+      <div class="list">${js.length ? js.map((j) => `<div class="item pzi"><button class="pzthumb" data-a="pzOpen" data-id="${j.id}" aria-label="Abrir ${esc(j.nombre)}"><img src="${pzMini(j)}" alt=""></button>
+        <span class="it"><h3>${esc(j.nombre)}</h3><span class="tags"><span class="tag">${j.fmt === "f7" ? "F7" : "F11"} · ${j.form}</span>${j.dur ? `<span class="tag acc">${ic("play")} ${(j.dur / 1000).toFixed(0)} s</span>` : ""}${(j.dib || []).length ? `<span class="tag">${j.dib.length} flecha${j.dib.length > 1 ? "s" : ""}</span>` : ""}</span>
+        <span class="row"><button class="btn sm" data-a="pzOpen" data-id="${j.id}">Abrir</button><button class="btn sm" data-a="pzDup" data-id="${j.id}">Duplicar</button><button class="iconbtn sm" data-a="pzDel" data-id="${j.id}" aria-label="Borrar ${esc(j.nombre)}">${ic("trash")}</button></span></span></div>`).join("")
+        : `<div class="empty">Todavía no tienes jugadas. Crea una: salida de balón, un córner, una presión…</div>`}</div>`;
+  }
+
+  /* --- editor a pantalla completa --- */
+  function pzOpenEditor(j, id) {
+    UI.pz = { j, id: id || null, modo: "colocar", t: 0, play: false, rec: false, speed: 1, ptr: {}, undo: [], dib: "pase", dirty: false, ver: false };
+    pzRender();
+  }
+  function pzRender() {
+    let box = $("#piz");
+    if (!box) { box = document.createElement("div"); box.id = "piz"; document.body.appendChild(box); }
+    const P = UI.pz;
+    document.body.classList.toggle("lock", !!P || !!UI.sheet || !!UI.live || !!UI.va);
+    if (!P) { box.innerHTML = ""; return; }
+    const j = P.j;
+    if (P.ver) {
+      box.innerHTML = `<div class="pz ver" role="dialog" aria-label="Jugada a pantalla completa"><div class="pz-top"><button class="iconbtn" data-a="pzVer" aria-label="Salir de pantalla completa">${ic("close")}</button><b>${esc(j.nombre || "Jugada")}</b><span id="pzt" class="pz-t"></span></div>
+        <div class="pz-board" id="pzbox"><canvas id="pzcv" aria-label="Jugada animada"></canvas></div><button class="btn primary big" data-a="pzPlay" id="pzplay">${ic("play")} Ver otra vez</button></div>`;
+      pzSize(); pzBind(); return;
+    }
+    const forms = Object.keys(PZ_FORM[j.fmt]);
+    let bar = "";
+    if (P.modo === "colocar") bar = `<div class="chips pz-forms">${forms.map((f) => `<button class="chip${j.form === f ? " on" : ""}" data-a="pzForm" data-v="${f}">${f}</button>`).join("")}</div>
+      <div class="pz-row"><button class="btn sm" data-a="pzRiv">${j.riv ? "Quitar rivales" : "+ Rivales"}</button><button class="btn sm" data-a="pzAdd" data-v="nos">+ Jugador</button><button class="btn sm" data-a="pzAdd" data-v="riv">+ Rival</button><button class="btn sm" data-a="pzBal">${j.fichas.some((f) => f.k === "bal") ? "Quitar balón" : "+ Balón"}</button></div>
+      <p class="pz-hint">Arrastra las fichas para colocarlas. Toca un jugador para ponerle nombre.</p>`;
+    else if (P.modo === "grabar") bar = `<button class="btn big ${P.rec ? "rec" : "primary"}" data-a="pzRec" id="pzrec">${P.rec ? "■ Parar la grabación" : "● Grabar movimiento"}</button>
+      <p class="pz-hint">${P.rec ? "Grabando: mueve con el dedo a los jugadores y el balón. Se graba tal cual, con sus pausas." : j.dur ? "Puedes grabar otra vez encima: lo ya grabado se reproduce mientras mueves otra ficha (así se mueven varios a la vez)." : "Pulsa grabar (o empieza a arrastrar una ficha) y mueve a los jugadores y el balón con el dedo."}</p>
+      ${j.dur && !P.rec ? `<button class="btn sm" data-a="pzClearMov">Borrar movimientos</button>` : ""}`;
+    else bar = `<div class="chips">${[["pase", "Pase"], ["carrera", "Carrera"], ["conduccion", "Conducción"]].map((x) => `<button class="chip${P.dib === x[0] ? " on" : ""}" data-a="pzDibT" data-v="${x[0]}">${x[1]}</button>`).join("")}</div>
+      <p class="pz-hint">Dibuja con el dedo una flecha: línea continua para el pase, discontinua para la carrera y ondulada para la conducción.</p>
+      ${(j.dib || []).length ? `<button class="btn sm" data-a="pzClearDib">Borrar flechas</button>` : ""}`;
+    box.innerHTML = `<div class="pz" role="dialog" aria-label="Pizarra táctica">
+      <div class="pz-top"><button class="iconbtn" data-a="pzClose" aria-label="Cerrar la pizarra">${ic("close")}</button><input id="pzname" value="${esc(j.nombre)}" placeholder="Nombre de la jugada" aria-label="Nombre de la jugada"><button class="iconbtn" data-a="pzUndo" aria-label="Deshacer"${P.undo.length ? "" : " disabled"}>↶</button></div>
+      <div class="pz-board" id="pzbox"><canvas id="pzcv" aria-label="Campo con las fichas: arrástralas con el dedo"></canvas></div>
+      <div class="pz-play"><button class="btn" data-a="pzPlay" id="pzplay"${j.dur ? "" : " disabled"}>${P.play ? "❚❚ Pausa" : ic("play") + " Reproducir"}</button><span id="pzt" class="pz-t">${(P.t / 1000).toFixed(1)} / ${(j.dur / 1000).toFixed(1)} s</span><button class="chip" data-a="pzSpeed">${P.speed === 1 ? "1×" : "½×"}</button><button class="btn" data-a="pzVer"${j.dur || (j.dib || []).length ? "" : " disabled"}>Ver grande</button></div>
+      <div class="seg pz-modos" role="tablist">${[["colocar", "Colocar"], ["grabar", "Grabar"], ["dibujar", "Dibujar"]].map((x) => `<button role="tab" aria-selected="${P.modo === x[0]}" class="${P.modo === x[0] ? "on" : ""}" data-a="pzModo" data-v="${x[0]}">${x[1]}</button>`).join("")}</div>
+      <div class="pz-bar">${bar}</div>
+      <div class="pz-row"><button class="btn primary" data-a="pzSave">Guardar</button><button class="btn" data-a="pzVideo"${j.dur ? "" : " disabled"}>Compartir vídeo</button></div>
+    </div>`;
+    const nm = $("#pzname"); if (nm) nm.addEventListener("input", () => { P.j.nombre = nm.value; P.dirty = true; });
+    pzSize(); pzBind();
+  }
+  function pzSize() {
+    const P = UI.pz, cv = $("#pzcv"), box = $("#pzbox"); if (!cv || !box) return;
+    const dpr = window.devicePixelRatio || 1, d = PZ_DIM[P.j.fmt], ratio = (d[1] / d[0]) * (1 + 2 * PZ_MY) / (1 + 2 * PZ_MX);
+    const maxH = P.ver ? window.innerHeight - 150 : Math.max(260, window.innerHeight - 370);
+    const w = Math.min(box.clientWidth || 360, maxH / ratio);
+    cv.style.width = w + "px"; cv.style.height = w * ratio + "px";
+    cv.width = Math.round(w * dpr); cv.height = Math.round(w * ratio * dpr);
+    P.dpr = dpr;
+    pzPaint();
+  }
+  function pzPaint() {
+    const P = UI.pz, cv = $("#pzcv"); if (!P || !cv) return;
+    const quieto = !P.play && !P.rec && P.t === 0;
+    pzDraw(cv, P.j, P.t, { dpr: P.dpr, trails: quieto ? "todo" : true, sel: P.sel });
+    if (P.draw && P.draw.length > 1) pzFlecha(cv.getContext("2d"), P.draw, pzGeo(cv, P.j), P.dib, P.dpr);
+    const tt = $("#pzt"); if (tt) tt.textContent = P.ver ? "" : (P.t / 1000).toFixed(1) + " / " + (Math.max(P.j.dur, P.rec ? P.t : 0) / 1000).toFixed(1) + " s";
+  }
+  function pzSnap() { const P = UI.pz; P.undo.push(JSON.stringify(P.j)); if (P.undo.length > 30) P.undo.shift(); P.dirty = true; const u = document.querySelector('[data-a="pzUndo"]'); if (u) u.disabled = false; }
+  function pzXY(ev) {
+    const P = UI.pz, cv = $("#pzcv"), r = cv.getBoundingClientRect(), g = pzGeo(cv, P.j), k = cv.width / r.width;
+    return [((ev.clientX - r.left) * k - g.ox) / g.pw, ((ev.clientY - r.top) * k - g.oy) / g.ph];
+  }
+  /* La ficha que hay bajo el dedo (el balón primero, que es pequeño y va encima) */
+  function pzHit(x, y) {
+    const P = UI.pz, cv = $("#pzcv"), g = pzGeo(cv, P.j), j = P.j;
+    const orden = j.fichas.filter((f) => f.k === "bal").concat(j.fichas.filter((f) => f.k !== "bal").reverse());
+    let best = null, bd = 1e9;
+    orden.forEach((f) => {
+      const q = pzPos(j, f, P.t), dd = Math.hypot((q[0] - x) * g.pw, (q[1] - y) * g.ph), lim = g.r * (f.k === "bal" ? 1.1 : 1.3);
+      if (dd < lim && dd < bd - (f.k === "bal" ? 0 : 0.5)) { best = f; bd = dd; }
+    });
+    return best;
+  }
+  const pzClamp = (v) => Math.max(-0.04, Math.min(1.04, v));
+  /* Reloj de reproducción y grabación */
+  function pzLoop() {
+    const P = UI.pz; if (!P || (!P.play && !P.rec)) return;
+    const now = performance.now();
+    P.t = (now - P.t0) * (P.rec ? 1 : P.speed);
+    if (P.play && !P.rec && P.t >= P.j.dur + 700) {
+      P.play = false; P.t = P.j.dur;
+      pzPaint(); const b = $("#pzplay"); if (b) b.innerHTML = P.ver ? ic("play") + " Ver otra vez" : ic("play") + " Reproducir";
+      if (P.onEnd) { const f = P.onEnd; P.onEnd = null; f(); }
+      return;
+    }
+    if (P.rec && P.t > 90000) { pzRecStop(); return; }
+    pzPaint();
+    P.raf = requestAnimationFrame(pzLoop);
+  }
+  function pzPlay(desde) {
+    const P = UI.pz;
+    if (!P.j.dur) return;
+    P.play = true; P.t = desde || 0; P.t0 = performance.now() - P.t / P.speed;
+    cancelAnimationFrame(P.raf); P.raf = requestAnimationFrame(pzLoop);
+  }
+  function pzRecStart() {
+    const P = UI.pz;
+    pzSnap();
+    P.rec = true; P.play = false; P.t = 0; P.t0 = performance.now();
+    cancelAnimationFrame(P.raf); P.raf = requestAnimationFrame(pzLoop);
+    const b = $("#pzrec"); if (b) { b.textContent = "■ Parar la grabación"; b.classList.add("rec"); b.classList.remove("primary"); }
+  }
+  function pzRecStop() {
+    const P = UI.pz; if (!P.rec) return;
+    P.rec = false; cancelAnimationFrame(P.raf);
+    let fin = 0;
+    Object.keys(P.j.pistas).forEach((k) => { const p = P.j.pistas[k]; if (p.length) fin = Math.max(fin, p[p.length - 1][0]); });
+    P.j.dur = fin ? Math.round(fin + 400) : P.j.dur;
+    P.t = 0; P.ptr = {};
+    pzRender();
+  }
+  function pzBind() {
+    const cv = $("#pzcv"); if (!cv) return;
+    const P = UI.pz;
+    if (P.ver) { cv.addEventListener("click", () => pzPlay(0)); return; }
+    cv.addEventListener("pointerdown", (ev) => {
+      ev.preventDefault();
+      const [x, y] = pzXY(ev);
+      try { cv.setPointerCapture(ev.pointerId); } catch (e) { /* nada */ }
+      if (P.modo === "dibujar") { pzSnap(); P.draw = [[x, y]]; P.drawId = ev.pointerId; return; }
+      const f = pzHit(x, y); if (!f) return;
+      if (P.play) { P.play = false; cancelAnimationFrame(P.raf); }
+      if (P.modo === "grabar") {
+        if (!P.rec) pzRecStart();
+        const now = Math.round(P.t), q = pzPos(P.j, f, now);
+        const p = (P.j.pistas[f.id] || []).filter((s) => s[0] < now);
+        p.push([now, +q[0].toFixed(4), +q[1].toFixed(4)]);
+        P.j.pistas[f.id] = p;
+      } else { if (P.t !== 0) { P.t = 0; } pzSnap(); }
+      P.ptr[ev.pointerId] = { id: f.id, sx: ev.clientX, sy: ev.clientY, moved: false, last: 0 };
+      P.sel = f.id; pzPaint();
+    });
+    cv.addEventListener("pointermove", (ev) => {
+      if (P.draw && P.drawId === ev.pointerId) {
+        const [x, y] = pzXY(ev), l = P.draw[P.draw.length - 1];
+        if (Math.hypot(x - l[0], y - l[1]) > 0.012) { P.draw.push([+x.toFixed(4), +y.toFixed(4)]); pzPaint(); }
+        return;
+      }
+      const s = P.ptr[ev.pointerId]; if (!s) return;
+      if (Math.hypot(ev.clientX - s.sx, ev.clientY - s.sy) > 6) s.moved = true;
+      if (!s.moved) return;
+      const [x, y] = pzXY(ev), f = P.j.fichas.find((q) => q.id === s.id); if (!f) return;
+      if (P.modo === "grabar" && P.rec) {
+        const now = Math.round(P.t);
+        if (now - s.last >= 25) { P.j.pistas[f.id].push([now, +pzClamp(x).toFixed(4), +pzClamp(y).toFixed(4)]); s.last = now; }
+      } else { f.x = +pzClamp(x).toFixed(4); f.y = +pzClamp(y).toFixed(4); pzPaint(); }
+    });
+    const up = (ev) => {
+      if (P.draw && P.drawId === ev.pointerId) {
+        const d = P.draw; P.draw = null;
+        const len = d.reduce((a, p, i) => (i ? a + Math.hypot(p[0] - d[i - 1][0], p[1] - d[i - 1][1]) : 0), 0);
+        if (d.length >= 2 && len > 0.05) { P.j.dib = P.j.dib || []; P.j.dib.push({ k: P.dib, p: d }); pzRender(); } else { P.undo.pop(); pzPaint(); }
+        return;
+      }
+      const s = P.ptr[ev.pointerId]; if (!s) return;
+      delete P.ptr[ev.pointerId];
+      const f = P.j.fichas.find((q) => q.id === s.id);
+      if (P.modo === "grabar" && P.rec && f) { const q = pzXY(ev); P.j.pistas[f.id].push([Math.round(P.t), +pzClamp(q[0]).toFixed(4), +pzClamp(q[1]).toFixed(4)]); }
+      if (P.modo === "colocar" && !s.moved) { P.undo.pop(); if (f && f.k === "nos") openSheet({ t: "pzJug", id: f.id }); else if (f) openSheet({ t: "pzFicha", id: f.id }); }
+      P.sel = null; pzPaint();
+    };
+    cv.addEventListener("pointerup", up); cv.addEventListener("pointercancel", up);
+  }
+  function pzGuardar(silencio) {
+    const P = UI.pz, j = P.j;
+    S.jugadas = S.jugadas || [];
+    if (!j.nombre.trim()) j.nombre = "Jugada " + (S.jugadas.length + (P.id ? 0 : 1));
+    j.ts = Date.now();
+    if (P.id) { j.id = P.id; const i = S.jugadas.findIndex((x) => x.id === P.id); if (i >= 0) S.jugadas[i] = pzClone(j); else S.jugadas.push(pzClone(j)); }
+    else { P.id = "j" + Date.now().toString(36); j.id = P.id; S.jugadas.push(pzClone(j)); }
+    P.dirty = false; save();
+    if (!silencio) toast("Jugada guardada");
+  }
+  /* Vídeo de la jugada para mandarlo por WhatsApp */
+  async function pzVideo() {
+    const P = UI.pz, j = P.j;
+    if (!j.dur) { toast("Graba primero algún movimiento"); return; }
+    const tipos = ["video/mp4;codecs=avc1.42E01E", "video/mp4", "video/webm;codecs=vp9", "video/webm;codecs=vp8", "video/webm"];
+    const mime = window.MediaRecorder && MediaRecorder.isTypeSupported ? tipos.find((x) => MediaRecorder.isTypeSupported(x)) : null;
+    const cv = document.createElement("canvas");
+    if (!mime || !cv.captureStream) { toast("Este móvil no permite crear el vídeo"); return; }
+    cv.width = 720; cv.height = pzAlto(720, j) + (pzAlto(720, j) % 2);
+    cv.className = "pz-hidden"; document.body.appendChild(cv);
+    const box = document.createElement("div"); box.className = "pz-wait"; box.innerHTML = `<div><b>Creando el vídeo…</b><div class="lv-bar"><i id="pzvbar" style="width:0%"></i></div></div>`; document.body.appendChild(box);
+    const titulo = j.nombre.trim() || "Jugada";
+    try {
+      const stream = cv.captureStream(30), rec = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 2500000 }), trozos = [];
+      rec.ondataavailable = (e) => { if (e.data && e.data.size) trozos.push(e.data); };
+      const fin = new Promise((r) => { rec.onstop = r; });
+      pzDraw(cv, j, 0, { dpr: 2, trails: true, titulo });
+      rec.start(250);
+      const total = 900 + j.dur + 1300, t0 = performance.now();
+      await new Promise((res) => {
+        const paso = () => {
+          const e = performance.now() - t0, t = Math.max(0, Math.min(j.dur, e - 900));
+          pzDraw(cv, j, t, { dpr: 2, trails: true, titulo });
+          const b = $("#pzvbar"); if (b) b.style.width = Math.min(100, (e / total) * 100).toFixed(0) + "%";
+          if (e >= total) res(); else requestAnimationFrame(paso);
+        };
+        requestAnimationFrame(paso);
+      });
+      rec.stop(); await fin;
+      const blob = new Blob(trozos, { type: mime.split(";")[0] });
+      const ext = mime.indexOf("mp4") >= 0 ? "mp4" : "webm";
+      const nombre = (titulo.normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^\w]+/g, "_").replace(/^_|_$/g, "") || "jugada") + "." + ext;
+      await pzCompartir(blob, nombre, titulo);
+    } catch (e) { toast("No se ha podido crear el vídeo"); }
+    finally { cv.remove(); box.remove(); }
+  }
+  async function pzCompartir(blob, nombre, titulo) {
+    if (NATIVE && NATIVE.shareFile) {
+      const b64 = await new Promise((r) => { const fr = new FileReader(); fr.onload = () => r(String(fr.result).split(",")[1]); fr.readAsDataURL(blob); });
+      if (NATIVE.shareFile(nombre, blob.type, b64) !== false) return;
+    }
+    const file = new File([blob], nombre, { type: blob.type });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) { try { await navigator.share({ files: [file], title: titulo }); return; } catch (e) { if (e && e.name === "AbortError") return; } }
+    const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = nombre; document.body.appendChild(a); a.click();
+    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 4000);
+    toast("Vídeo guardado en descargas");
+  }
+  function pzCerrar() {
+    const P = UI.pz; if (!P) return;
+    cancelAnimationFrame(P.raf);
+    const j = P.j, algo = Object.keys(j.pistas).length || (j.dib || []).length || j.nombre.trim();
+    if (P.dirty && algo) pzGuardar(true);
+    const guardada = P.dirty === false && P.id;
+    UI.pz = null; pzRender(); render();
+    if (guardada && algo) toast("Jugada guardada en la pizarra");
+  }
+
   /* ---------- hojas (modales) ---------- */
   function libCtx() {
     const a = avail(), t = S.team;
@@ -3725,7 +4403,7 @@ var Vision = (function () {
   }
   function renderSheet() {
     const box = $("#sheet"), sh = UI.sheet;
-    document.body.classList.toggle("lock", !!sh || !!UI.live || !!UI.va);
+    document.body.classList.toggle("lock", !!sh || !!UI.live || !!UI.va || !!UI.pz);
     if (!sh) { box.innerHTML = ""; return; }
     let title = "", body = "";
     if (sh.t === "ex") {
@@ -3777,8 +4455,18 @@ var Vision = (function () {
       title = sh.sale ? "Sale " + pname(sh.sale) + " · ¿quién entra?" : "Entra " + pname(sh.entra) + " · ¿quién sale?";
       body = `<div class="attend big">${pool.map((p) => `<button data-a="cambioOk" data-id="${p.id}"><span class="dorsal">${p.dorsal}</span>${esc(p.nombre)}</button>`).join("") || '<p class="muted">No hay jugadores disponibles.</p>'}</div>
         ${sh.sale ? `<button class="btn" data-a="cambioOk" data-id="">Sale sin sustituto</button>` : ""}`;
+    } else if (sh.t === "pzJug" || sh.t === "pzFicha") {
+      const P = UI.pz, f = P && P.j.fichas.find((x) => x.id === sh.id);
+      if (!f) { UI.sheet = null; return; }
+      if (sh.t === "pzJug") {
+        title = "¿Quién juega aquí?";
+        const pls = S.players.slice().sort((x, y) => (Number(x.dorsal) || 99) - (Number(y.dorsal) || 99));
+        body = (pls.length ? `<div class="attend big">${pls.map((p) => `<button data-a="pzAsig" data-id="${p.id}" class="${f.jid === p.id ? "on" : ""}"><span class="dorsal">${p.dorsal}</span>${esc(p.nombre)}</button>`).join("")}</div>`
+          : `<p class="muted">Añade tu plantilla en «Equipo» para poner el nombre de cada niño en su posición.</p>`) +
+          `<div class="row">${f.jid ? `<button class="btn" data-a="pzAsig" data-id="">Sin nombre</button>` : ""}<button class="btn" data-a="pzQuitar">Quitar del campo</button></div>`;
+      } else { title = f.k === "bal" ? "Balón" : "Rival"; body = `<button class="btn" data-a="pzQuitar">Quitar del campo</button>`; }
     } else if (sh.t === "ask") {
-      const Q = { delS: ["¿Borrar esta sesión?", "No se puede deshacer.", "Borrar sesión"], clearEj: ["¿Empezar de cero?", "Se borran la plantilla, el partido y las sesiones de ejemplo. Tus datos se mantienen.", "Borrar ejemplos"], delM: ["¿Borrar este partido?", "Las sesiones creadas a partir de él se mantienen.", "Borrar partido"], clearPl: ["¿Vaciar la plantilla?", "Se eliminan todos los jugadores.", "Vaciar plantilla"], liveExit: ["¿Salir del entrenamiento?", "Se detiene el cronómetro.", "Salir"], lendP: ["¿Terminar esta parte?", "El cronómetro se para y se guarda la duración de la parte.", "Terminar parte"], lfin: ["¿Terminar el partido?", "Se cierra el marcador y se analizan las estadísticas.", "Terminar partido"] }[sh.v];
+      const Q = { delS: ["¿Borrar esta sesión?", "No se puede deshacer.", "Borrar sesión"], clearEj: ["¿Empezar de cero?", "Se borran la plantilla, el partido y las sesiones de ejemplo. Tus datos se mantienen.", "Borrar ejemplos"], delM: ["¿Borrar este partido?", "Las sesiones creadas a partir de él se mantienen.", "Borrar partido"], clearPl: ["¿Vaciar la plantilla?", "Se eliminan todos los jugadores.", "Vaciar plantilla"], liveExit: ["¿Salir del entrenamiento?", "Se detiene el cronómetro.", "Salir"], delJ: ["¿Borrar esta jugada?", "No se puede deshacer.", "Borrar jugada"], lendP: ["¿Terminar esta parte?", "El cronómetro se para y se guarda la duración de la parte.", "Terminar parte"], lfin: ["¿Terminar el partido?", "Se cierra el marcador y se analizan las estadísticas.", "Terminar partido"] }[sh.v];
       title = Q[0];
       body = `<p>${Q[1]}</p><div class="row"><button class="btn" data-a="closeSheet">Cancelar</button><button class="btn primary" data-a="confirm" data-v="${sh.v}">${Q[2]}</button></div>`;
     }
@@ -4075,6 +4763,7 @@ var Vision = (function () {
       }
       if (d.v === "lfin") { const m = curM(); finalizar(m); keepOn(false); UI.sheet = null; UI.page = { t: "match", id: m.id }; render(); window.scrollTo(0, 0); toast("Partido terminado: revisa el análisis"); return; }
       if (d.v === "delM") { const m = curM(); S.partidos = S.partidos.filter((x) => x !== m); if (m && m.fcf && S.fcf) { S.fcf.ign = (S.fcf.ign || []).concat(m.fcf); } try { localStorage.removeItem(VAK(m)); } catch (e) { /* nada */ } save(); UI.page = null; toast("Partido borrado"); }
+      if (d.v === "delJ") { S.jugadas = (S.jugadas || []).filter((x) => x.id !== UI.delJ); save(); toast("Jugada borrada"); }
       if (d.v === "delS") { const s = cur(); S.sessions = S.sessions.filter((x) => x.id !== s.id); save(); UI.page = null; toast("Sesión borrada"); }
       if (d.v === "clearEj") { S.players = S.players.filter((p) => !p.ej); S.sessions = S.sessions.filter((s) => !s.ejemplo); S.partidos = S.partidos.filter((m) => !m.ejemplo); S.ejemplo = false; save(); UI.form = null; toast("Listo: empieza con tu equipo"); }
       if (d.v === "clearPl") { S.players = []; save(); UI.form = null; }
@@ -4150,10 +4839,62 @@ var Vision = (function () {
       buzz(30); save(); render();
       if (EVM[d.v].j && S.players.length) openSheet({ t: "evj", id: e.id }); else toast(EVM[d.v].n + " · " + hms(vt));
     },
+    pzNew: (d) => pzOpenEditor(pzNueva(d.v === "f11" || d.v === "f7" ? d.v : null), null),
+    pzOpen: (d) => { const j = (S.jugadas || []).find((x) => x.id === d.id); if (j) pzOpenEditor(pzClone(j), j.id); },
+    pzDup: (d) => {
+      const j = (S.jugadas || []).find((x) => x.id === d.id); if (!j) return;
+      const c = pzClone(j); c.id = "j" + Date.now().toString(36); c.nombre = j.nombre + " (copia)"; c.ts = Date.now();
+      S.jugadas.push(c); save(); render(); toast("Jugada duplicada");
+    },
+    pzDel: (d) => { UI.delJ = d.id; openSheet({ t: "ask", v: "delJ" }); },
+    pzClose: () => pzCerrar(),
+    pzUndo: () => { const P = UI.pz; if (!P || !P.undo.length) return; const nom = P.j.nombre; P.j = JSON.parse(P.undo.pop()); P.j.nombre = nom; P.dirty = true; pzRender(); },
+    pzModo: (d) => { const P = UI.pz; if (P.rec) pzRecStop(); P.play = false; cancelAnimationFrame(P.raf); P.modo = d.v; P.t = 0; pzRender(); },
+    pzForm: (d) => { const P = UI.pz; pzSnap(); pzFormacion(P.j, d.v); S.team.pzForm = d.v; save(); pzRender(); },
+    pzRiv: () => { const P = UI.pz; pzSnap(); pzRivales(P.j, !P.j.riv); pzRender(); },
+    pzAdd: (d) => {
+      const P = UI.pz, j = P.j; pzSnap();
+      const n = j.fichas.filter((f) => f.k === d.v).length;
+      j.fichas.push({ id: (d.v === "nos" ? "n" : "r") + Date.now().toString(36), k: d.v, x: 0.5 + ((n % 3) - 1) * 0.12, y: d.v === "nos" ? 0.62 : 0.38, n: n + 1 });
+      if (d.v === "riv") j.riv = true;
+      pzRender();
+    },
+    pzBal: () => {
+      const P = UI.pz, j = P.j; pzSnap();
+      if (j.fichas.some((f) => f.k === "bal")) { j.fichas = j.fichas.filter((f) => f.k !== "bal"); delete j.pistas.b; }
+      else j.fichas.push({ id: "b", k: "bal", x: 0.5, y: 0.5 });
+      pzRender();
+    },
+    pzRec: () => { const P = UI.pz; if (P.rec) pzRecStop(); else pzRecStart(); },
+    pzClearMov: () => { const P = UI.pz; pzSnap(); P.j.pistas = {}; P.j.dur = 0; P.t = 0; pzRender(); },
+    pzDibT: (d) => { UI.pz.dib = d.v; pzRender(); },
+    pzClearDib: () => { const P = UI.pz; pzSnap(); P.j.dib = []; pzRender(); },
+    pzPlay: () => {
+      const P = UI.pz; if (!P || !P.j.dur) return;
+      const b = $("#pzplay");
+      if (P.play && !P.ver) { P.play = false; cancelAnimationFrame(P.raf); if (b) b.innerHTML = ic("play") + " Reproducir"; return; }
+      pzPlay(P.ver || P.t >= P.j.dur ? 0 : P.t);
+      if (b) b.innerHTML = P.ver ? ic("play") + " Ver otra vez" : "❚❚ Pausa";
+    },
+    pzSpeed: (d, el) => { const P = UI.pz; P.speed = P.speed === 1 ? 0.5 : 1; if (P.play) P.t0 = performance.now() - P.t / P.speed; el.textContent = P.speed === 1 ? "1×" : "½×"; },
+    pzVer: () => {
+      const P = UI.pz; P.ver = !P.ver; P.play = false; cancelAnimationFrame(P.raf); P.t = 0;
+      pzRender();
+      if (P.ver) setTimeout(() => { if (UI.pz && UI.pz.ver) pzPlay(0); }, 350);
+    },
+    pzSave: () => pzGuardar(),
+    pzVideo: () => pzVideo(),
+    pzAsig: (d) => { const P = UI.pz, f = P.j.fichas.find((x) => x.id === UI.sheet.id); if (f) { f.jid = d.id || null; P.dirty = true; } closeSheet(); pzPaint(); },
+    pzQuitar: () => {
+      const P = UI.pz, id = UI.sheet.id; pzSnap();
+      P.j.fichas = P.j.fichas.filter((x) => x.id !== id); delete P.j.pistas[id];
+      if (!P.j.fichas.some((f) => f.k === "riv")) P.j.riv = false;
+      closeSheet(); pzRender();
+    },
     vaOpen: () => {
       const m = curM(); if (!m) return;
       const c = m.video.cal || {};
-      UI.va = { step: "modo", colFor: "nos", modo: c.modo || null, cal: { pts: (c.pts || []).slice(), nos: c.nos, riv: c.riv, nosP: c.nosP, rivP: c.rivP, gkN: c.gkN, gkR: c.gkR, gkNP: c.gkNP, gkRP: c.gkRP, dir: c.dir || 1, cambio: c.cambio !== false } };
+      UI.va = { step: "modo", colFor: "nos", modo: c.modo || null, cal: { pts: (c.pts || []).slice(), nos: c.nos, riv: c.riv, nosP: c.nosP, rivP: c.rivP, gkN: c.gkN, gkR: c.gkR, gkNP: c.gkNP, gkRP: c.gkRP, nos2: c.nos2, riv2: c.riv2, gkN2: c.gkN2, gkR2: c.gkR2, dir: c.dir || 1, cambio: c.cambio !== false } };
       if (vaSnap()) { if (!UI.va.modo) UI.va.modo = UI.va.vh > UI.va.vw ? "mano" : "fijo"; vaRender(); return; }
       /* el vídeo aún no ha pintado ninguna imagen: saltar a un momento y esperar */
       const v = $("#vid"); if (!v) { UI.va = null; return; }
@@ -4167,7 +4908,7 @@ var Vision = (function () {
       const v = $("#vid"); if (!v) return;
       const dur = Math.max(1, v.duration || 1), paso = Math.max(1.5, Math.min(37, dur / 10));
       const t = Math.max(0, Math.min(dur - 0.2, v.currentTime + paso * (Number(d.d) || 1)));
-      once(v, "seeked", 5000).then(() => { vaSnap(); vaDraw(); });
+      once(v, "seeked", 5000).then(() => { vaSnap(); if (UI.va) UI.va.boxes = null; vaDraw(); vaDetSnap(); });
       v.currentTime = t;
     },
     vaStep: (d) => {
@@ -4177,11 +4918,12 @@ var Vision = (function () {
         if (Vision.homography(A.cal.pts, Vision.UNIT) == null) { toast("Esas esquinas no forman un campo: revísalas"); return; }
       }
       A.step = d.v;
-      if (d.v === "col") { const orden = A.modo === "mano" ? ["gkN", "gkR"] : ["nos", "riv", "gkN", "gkR"]; A.colFor = orden.find((k) => !A.cal[k]) || orden[0]; }
+      if (d.v === "col") { const orden = ["nos", "riv", "gkN", "gkR"]; A.colFor = orden.find((k) => !A.cal[k]) || orden[0]; }
       vaRender();
+      if (d.v === "col") vaDetSnap();
     },
     vaModo: (d) => { UI.va.modo = d.v; vaRender(); },
-    vaColDel: () => { const A = UI.va; delete A.cal[A.colFor]; delete A.cal[A.colFor + "P"]; vaRender(); },
+    vaColDel: () => { const A = UI.va; ["", "P", "2", "B"].forEach((x) => { delete A.cal[A.colFor + x]; }); vaRender(); },
     vaCol: (d) => { UI.va.colFor = d.v; vaRender(); },
     vaDir: (d) => { UI.va.cal.dir = Number(d.v); vaRender(); },
     vaGo: () => vaStart(),
@@ -4311,19 +5053,20 @@ var Vision = (function () {
 
   /* ---------- render principal ---------- */
   function renderNav() {
-    const items = [["inicio", "Inicio", "home"], ["biblioteca", "Ejercicios", "book"], ["sesiones", "Sesiones", "cal"], ["crear", "Crear", "plus"], ["partidos", "Partidos", "ball"], ["equipo", "Equipo", "team"]];
+    const items = [["inicio", "Inicio", "home"], ["biblioteca", "Ejercicios", "book"], ["sesiones", "Sesiones", "cal"], ["crear", "Crear", "plus"], ["partidos", "Partidos", "ball"], ["pizarra", "Pizarra", "board"], ["equipo", "Equipo", "team"]];
     $("#nav").innerHTML = `<div class="in">${items.map((x) => `<a href="#${x[0]}" data-a="tab" data-v="${x[0]}" class="${UI.tab === x[0] && !UI.page ? "on" : ""}${x[0] === "crear" ? " cta" : ""}" aria-label="${x[1]}"${UI.tab === x[0] ? ' aria-current="page"' : ""}>${x[0] === "crear" ? `<span class="ic">${ic(x[2])}</span>` : ic(x[2])}${x[1]}</a>`).join("")}</div>`;
   }
   function render() {
     let html;
     if (UI.page && UI.page.t === "video" && $("#vid") && UI.vid && $("#vid").dataset.url === UI.vid.url && UI.vid.mid === UI.page.id) { vRefresh(findM(UI.page.id)); renderNav(); renderSheet(); return; }
     if (UI.page) html = UI.page.t === "draft" ? vSession(UI.draft, true) : UI.page.t === "match" ? vMatch(findM(UI.page.id)) : UI.page.t === "mlive" ? vLive(findM(UI.page.id)) : UI.page.t === "video" ? vVideo(findM(UI.page.id)) : vSession(findS(UI.page.id), false);
-    else html = { inicio: vInicio, crear: vCrear, biblioteca: vBiblio, sesiones: vSesiones, partidos: vPartidos, equipo: vEquipo }[UI.tab]();
+    else html = { inicio: vInicio, crear: vCrear, biblioteca: vBiblio, sesiones: vSesiones, partidos: vPartidos, pizarra: vPizarra, equipo: vEquipo }[UI.tab]();
     $("#main").innerHTML = html;
     renderNav(); renderSheet();
     if (UI.page && UI.page.t === "video") vBind();
   }
 
+  window.addEventListener("resize", () => { if (UI.pz) pzSize(); });
   document.addEventListener("click", (ev) => {
     const el = ev.target.closest("[data-a]");
     if (!el) return;
@@ -4370,6 +5113,7 @@ var Vision = (function () {
   /* Botón atrás de Android */
   window.appBack = function () {
     if (UI.va) { if (UI.va.step === "run") UI.va.cancel = true; else { UI.va = null; vaRender(); } return true; }
+    if (UI.pz && !UI.sheet) { if (UI.pz.ver) ACT.pzVer(); else pzCerrar(); return true; }
     if (UI.sheet) { closeSheet(); return true; }
     if (UI.live) { openSheet({ t: "ask", v: "liveExit" }); return true; }
     if (UI.page) { ACT.back(); return true; }

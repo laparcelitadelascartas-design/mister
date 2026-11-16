@@ -1,0 +1,2 @@
+Modelos de IA gratuitos para Míster.
+TensorFlow.js y COCO-SSD: Apache License 2.0 (Google).
