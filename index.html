@@ -450,6 +450,14 @@ svg.heat { display: block; width: 100%; height: auto; border-radius: 10px; color
 #piz .pz-row .btn { white-space: nowrap; flex: 1 1 auto; padding-left: 10px; padding-right: 10px; }
 #piz .pz-play .btn { white-space: nowrap; }
 .pz-t { white-space: nowrap; }
+.pz-eq { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.pz-eq button { border: 1.5px solid rgba(255, 255, 255, .2); background: rgba(255, 255, 255, .06); color: #fff; font: inherit; font-weight: 700; padding: 9px 6px; border-radius: 10px; }
+.pz-eq button.on.nos { background: #f0561b; border-color: #f0561b; }
+.pz-eq button.on.riv { background: #2f62d0; border-color: #2f62d0; }
+#piz .chip.on.riv { background: #2f62d0; border-color: #2f62d0; }
+.pz-nums { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 12px; }
+.pz-nums .chip { justify-content: center; font-weight: 800; font-size: 16px; padding: 10px 0; }
+.attend button.usado { opacity: .75; }
 
 </style>
 </head>
@@ -4030,13 +4038,23 @@ var Vision = (function () {
     });
     j.form = form;
   }
-  function pzRivales(j, on) {
+  /* Rivales: atacan hacia abajo, con su propia formación (se conservan sus dorsales) */
+  function pzRivales(j, on, form) {
+    const antes = j.fichas.filter((f) => f.k === "riv");
     j.fichas = j.fichas.filter((f) => f.k !== "riv");
-    Object.keys(j.pistas).forEach((k) => { if (k[0] === "r") delete j.pistas[k]; });
+    antes.forEach((f) => { delete j.pistas[f.id]; });
     j.riv = on;
     if (!on) return;
-    const pos = [[0.5, 0.94]].concat(PZ_FORM[j.fmt][Object.keys(PZ_FORM[j.fmt])[0]]);
-    pos.forEach((p, i) => j.fichas.push({ id: "r" + i, k: "riv", x: 1 - p[0], y: 1 - p[1], gk: i === 0 }));
+    form = form && PZ_FORM[j.fmt][form] ? form : j.rivForm && PZ_FORM[j.fmt][j.rivForm] ? j.rivForm : Object.keys(PZ_FORM[j.fmt])[0];
+    j.rivForm = form;
+    const pos = [[0.5, 0.94]].concat(PZ_FORM[j.fmt][form]);
+    const nos = j.fichas.filter((f) => f.k === "nos"), asp = PZ_DIM[j.fmt][1] / PZ_DIM[j.fmt][0];
+    pos.forEach((p, i) => {
+      let x = 1 - p[0]; const y = 1 - p[1];
+      /* que no queden encima de un jugador tuyo */
+      if (nos.some((f) => Math.hypot(f.x - x, (f.y - y) * asp) < 0.1)) x = x > 0.85 ? x - 0.09 : x + 0.09;
+      j.fichas.push({ id: "r" + Date.now().toString(36) + i, k: "riv", x, y, gk: i === 0, n: antes[i] && antes[i].n != null ? antes[i].n : i + 1 });
+    });
   }
   /* Posición de una ficha en el instante t (interpolando su pista) */
   function pzPos(j, f, t) {
@@ -4130,7 +4148,7 @@ var Vision = (function () {
       c.beginPath(); c.arc(x, y, g.r, 0, 7); c.fill(); c.restore();
       c.strokeStyle = o.sel === f.id ? "#ffd23f" : "#fff"; c.lineWidth = (o.sel === f.id ? 3.5 : 2) * dpr;
       c.beginPath(); c.arc(x, y, g.r, 0, 7); c.stroke();
-      const txt = f.k === "nos" ? String(pl ? pl.dorsal : f.n || "") : "";
+      const txt = f.k === "nos" ? String(pl ? pl.dorsal : f.n || "") : f.n ? String(f.n) : "";
       if (txt) { c.fillStyle = f.gk ? "#222" : "#fff"; c.font = `800 ${Math.round(g.r * 0.95)}px system-ui,sans-serif`; c.textAlign = "center"; c.textBaseline = "middle"; c.fillText(txt, x, y + g.r * 0.05); }
       if (pl) {
         c.font = `700 ${Math.round(g.r * 0.62)}px system-ui,sans-serif`; c.textAlign = "center"; c.textBaseline = "top";
@@ -4186,9 +4204,14 @@ var Vision = (function () {
     }
     const forms = Object.keys(PZ_FORM[j.fmt]);
     let bar = "";
-    if (P.modo === "colocar") bar = `<div class="chips pz-forms">${forms.map((f) => `<button class="chip${j.form === f ? " on" : ""}" data-a="pzForm" data-v="${f}">${f}</button>`).join("")}</div>
-      <div class="pz-row"><button class="btn sm" data-a="pzRiv">${j.riv ? "Quitar rivales" : "+ Rivales"}</button><button class="btn sm" data-a="pzAdd" data-v="nos">+ Jugador</button><button class="btn sm" data-a="pzAdd" data-v="riv">+ Rival</button><button class="btn sm" data-a="pzBal">${j.fichas.some((f) => f.k === "bal") ? "Quitar balón" : "+ Balón"}</button></div>
-      <p class="pz-hint">Arrastra las fichas para colocarlas. Toca un jugador para ponerle nombre.</p>`;
+    const eq = P.eq || "nos", bal = `<button class="btn sm" data-a="pzBal">${j.fichas.some((f) => f.k === "bal") ? "Quitar balón" : "+ Balón"}</button>`;
+    if (P.modo === "colocar") bar = `<div class="pz-eq" role="tablist"><button role="tab" aria-selected="${eq === "nos"}" class="${eq === "nos" ? "on nos" : ""}" data-a="pzEq" data-v="nos">Tu equipo</button><button role="tab" aria-selected="${eq === "riv"}" class="${eq === "riv" ? "on riv" : ""}" data-a="pzEq" data-v="riv">Rivales${j.riv ? "" : " (añadir)"}</button></div>
+      ${eq === "nos" ? `<div class="chips pz-forms">${forms.map((f) => `<button class="chip${j.form === f ? " on" : ""}" data-a="pzForm" data-v="${f}">${f}</button>`).join("")}</div>
+        <div class="pz-row"><button class="btn sm" data-a="pzAdd" data-v="nos">+ Jugador</button>${bal}</div>
+        <p class="pz-hint">Arrastra las fichas para colocarlas. Toca un jugador para ponerle el nombre.</p>`
+      : `${j.riv ? "" : `<p class="pz-hint">Elige la formación del rival para ponerlo en el campo:</p>`}<div class="chips pz-forms">${forms.map((f) => `<button class="chip${j.riv && j.rivForm === f ? " on riv" : ""}" data-a="pzRivForm" data-v="${f}">${f}</button>`).join("")}</div>
+        <div class="pz-row"><button class="btn sm" data-a="pzAdd" data-v="riv">+ Rival</button>${j.riv ? `<button class="btn sm" data-a="pzRiv">Quitar rivales</button>` : ""}${bal}</div>
+        <p class="pz-hint">Los rivales (azules) atacan hacia tu portería. Arrástralos para colocarlos y tócalos para ponerles el dorsal.</p>`}`;
     else if (P.modo === "grabar") bar = `<button class="btn big ${P.rec ? "rec" : "primary"}" data-a="pzRec" id="pzrec">${P.rec ? "■ Parar la grabación" : "● Grabar movimiento"}</button>
       <p class="pz-hint">${P.rec ? "Grabando: mueve con el dedo a los jugadores y el balón. Se graba tal cual, con sus pausas." : j.dur ? "Puedes grabar otra vez encima: lo ya grabado se reproduce mientras mueves otra ficha (así se mueven varios a la vez)." : "Pulsa grabar (o empieza a arrastrar una ficha) y mueve a los jugadores y el balón con el dedo."}</p>
       ${j.dur && !P.rec ? `<button class="btn sm" data-a="pzClearMov">Borrar movimientos</button>` : ""}`;
@@ -4211,8 +4234,17 @@ var Vision = (function () {
     const dpr = window.devicePixelRatio || 1, d = PZ_DIM[P.j.fmt], ratio = (d[1] / d[0]) * (1 + 2 * PZ_MY) / (1 + 2 * PZ_MX);
     const maxH = P.ver ? window.innerHeight - 150 : Math.max(260, window.innerHeight - 370);
     const w = Math.min(box.clientWidth || 360, maxH / ratio);
-    cv.style.width = w + "px"; cv.style.height = w * ratio + "px";
-    cv.width = Math.round(w * dpr); cv.height = Math.round(w * ratio * dpr);
+    const fija = (ww) => { cv.style.width = ww + "px"; cv.style.height = ww * ratio + "px"; cv.width = Math.round(ww * dpr); cv.height = Math.round(ww * ratio * dpr); P.boardW = ww; };
+    /* el tamaño del campo no cambia mientras editas (si no, las fichas se moverían bajo el dedo) */
+    const clave = window.innerWidth + "x" + window.innerHeight + (P.ver ? "v" : "") + P.j.fmt;
+    if (P.boardKey === clave && P.boardW) fija(P.boardW);
+    else {
+      fija(w);
+      /* si los botones no caben en la pantalla, el campo se hace algo más pequeño */
+      const pz = document.querySelector("#piz .pz");
+      if (pz && !P.ver) { const sobra = pz.scrollHeight - pz.clientHeight; if (sobra > 0) fija(Math.max(230 / ratio, w - sobra / ratio)); }
+      P.boardKey = clave;
+    }
     P.dpr = dpr;
     pzPaint();
   }
@@ -4295,7 +4327,8 @@ var Vision = (function () {
         p.push([now, +q[0].toFixed(4), +q[1].toFixed(4)]);
         P.j.pistas[f.id] = p;
       } else { if (P.t !== 0) { P.t = 0; } pzSnap(); }
-      P.ptr[ev.pointerId] = { id: f.id, sx: ev.clientX, sy: ev.clientY, moved: false, last: 0 };
+      const q0 = pzPos(P.j, f, P.t);
+      P.ptr[ev.pointerId] = { id: f.id, sx: ev.clientX, sy: ev.clientY, moved: false, last: 0, fx: f.x, fy: f.y, dx: q0[0] - x, dy: q0[1] - y, t0: performance.now() };
       P.sel = f.id; pzPaint();
     });
     cv.addEventListener("pointermove", (ev) => {
@@ -4305,9 +4338,11 @@ var Vision = (function () {
         return;
       }
       const s = P.ptr[ev.pointerId]; if (!s) return;
-      if (Math.hypot(ev.clientX - s.sx, ev.clientY - s.sy) > 6) s.moved = true;
+      /* un toque con el dedo siempre se mueve un poco: hasta 14 px sigue siendo un toque */
+      if (Math.hypot(ev.clientX - s.sx, ev.clientY - s.sy) > (P.modo === "grabar" ? 6 : 14)) s.moved = true;
       if (!s.moved) return;
-      const [x, y] = pzXY(ev), f = P.j.fichas.find((q) => q.id === s.id); if (!f) return;
+      let [x, y] = pzXY(ev); const f = P.j.fichas.find((q) => q.id === s.id); if (!f) return;
+      x += s.dx; y += s.dy;
       if (P.modo === "grabar" && P.rec) {
         const now = Math.round(P.t);
         if (now - s.last >= 25) { P.j.pistas[f.id].push([now, +pzClamp(x).toFixed(4), +pzClamp(y).toFixed(4)]); s.last = now; }
@@ -4324,10 +4359,20 @@ var Vision = (function () {
       delete P.ptr[ev.pointerId];
       const f = P.j.fichas.find((q) => q.id === s.id);
       if (P.modo === "grabar" && P.rec && f) { const q = pzXY(ev); P.j.pistas[f.id].push([Math.round(P.t), +pzClamp(q[0]).toFixed(4), +pzClamp(q[1]).toFixed(4)]); }
-      if (P.modo === "colocar" && !s.moved) { P.undo.pop(); if (f && f.k === "nos") openSheet({ t: "pzJug", id: f.id }); else if (f) openSheet({ t: "pzFicha", id: f.id }); }
+      if (P.modo === "colocar" && f && !s.moved && ev.type === "pointerup") {
+        P.undo.pop(); f.x = s.fx; f.y = s.fy;
+        /* la hoja se abre después del «click» que sigue al toque, si no ese click caería sobre la hoja */
+        P.tapId = f.id; clearTimeout(P.tapT); P.tapT = setTimeout(pzTapOpen, 350);
+      }
       P.sel = null; pzPaint();
     };
     cv.addEventListener("pointerup", up); cv.addEventListener("pointercancel", up);
+    cv.addEventListener("click", () => { if (P.tapId) { clearTimeout(P.tapT); pzTapOpen(); } });
+  }
+  function pzTapOpen() {
+    const P = UI.pz; if (!P || !P.tapId) return;
+    const f = P.j.fichas.find((q) => q.id === P.tapId); P.tapId = null;
+    if (f) openSheet({ t: f.k === "nos" ? "pzJug" : f.k === "riv" ? "pzRivN" : "pzFicha", id: f.id });
   }
   function pzGuardar(silencio) {
     const P = UI.pz, j = P.j;
@@ -4455,16 +4500,21 @@ var Vision = (function () {
       title = sh.sale ? "Sale " + pname(sh.sale) + " · ¿quién entra?" : "Entra " + pname(sh.entra) + " · ¿quién sale?";
       body = `<div class="attend big">${pool.map((p) => `<button data-a="cambioOk" data-id="${p.id}"><span class="dorsal">${p.dorsal}</span>${esc(p.nombre)}</button>`).join("") || '<p class="muted">No hay jugadores disponibles.</p>'}</div>
         ${sh.sale ? `<button class="btn" data-a="cambioOk" data-id="">Sale sin sustituto</button>` : ""}`;
-    } else if (sh.t === "pzJug" || sh.t === "pzFicha") {
+    } else if (sh.t === "pzJug" || sh.t === "pzFicha" || sh.t === "pzRivN") {
       const P = UI.pz, f = P && P.j.fichas.find((x) => x.id === sh.id);
       if (!f) { UI.sheet = null; return; }
       if (sh.t === "pzJug") {
         title = "¿Quién juega aquí?";
         const pls = S.players.slice().sort((x, y) => (Number(x.dorsal) || 99) - (Number(y.dorsal) || 99));
-        body = (pls.length ? `<div class="attend big">${pls.map((p) => `<button data-a="pzAsig" data-id="${p.id}" class="${f.jid === p.id ? "on" : ""}"><span class="dorsal">${p.dorsal}</span>${esc(p.nombre)}</button>`).join("")}</div>`
+        const usados = P.j.fichas.filter((x) => x.jid && x.id !== f.id).map((x) => x.jid);
+        body = (pls.length ? `<p class="muted" style="margin:0 0 8px">Los que ya están en el campo se cambian de sitio con este.</p><div class="attend big">${pls.map((p) => `<button data-a="pzAsig" data-id="${p.id}" class="${f.jid === p.id ? "on" : ""}${usados.indexOf(p.id) >= 0 ? " usado" : ""}"><span class="dorsal">${p.dorsal}</span>${esc(p.nombre)}${usados.indexOf(p.id) >= 0 ? ` <small>· en el campo</small>` : ""}</button>`).join("")}</div>`
           : `<p class="muted">Añade tu plantilla en «Equipo» para poner el nombre de cada niño en su posición.</p>`) +
           `<div class="row">${f.jid ? `<button class="btn" data-a="pzAsig" data-id="">Sin nombre</button>` : ""}<button class="btn" data-a="pzQuitar">Quitar del campo</button></div>`;
-      } else { title = f.k === "bal" ? "Balón" : "Rival"; body = `<button class="btn" data-a="pzQuitar">Quitar del campo</button>`; }
+      } else if (sh.t === "pzRivN") {
+        title = "Dorsal del rival";
+        body = `<div class="pz-nums">${Array.from({ length: 25 }, (_, i) => i + 1).map((n) => `<button class="chip${f.n === n ? " on" : ""}" data-a="pzNum" data-n="${n}">${n}</button>`).join("")}</div>
+          <div class="row"><button class="btn" data-a="pzNum" data-n="0">Sin dorsal</button><button class="btn" data-a="pzQuitar">Quitar del campo</button></div>`;
+      } else { title = "Balón"; body = `<button class="btn" data-a="pzQuitar">Quitar del campo</button>`; }
     } else if (sh.t === "ask") {
       const Q = { delS: ["¿Borrar esta sesión?", "No se puede deshacer.", "Borrar sesión"], clearEj: ["¿Empezar de cero?", "Se borran la plantilla, el partido y las sesiones de ejemplo. Tus datos se mantienen.", "Borrar ejemplos"], delM: ["¿Borrar este partido?", "Las sesiones creadas a partir de él se mantienen.", "Borrar partido"], clearPl: ["¿Vaciar la plantilla?", "Se eliminan todos los jugadores.", "Vaciar plantilla"], liveExit: ["¿Salir del entrenamiento?", "Se detiene el cronómetro.", "Salir"], delJ: ["¿Borrar esta jugada?", "No se puede deshacer.", "Borrar jugada"], lendP: ["¿Terminar esta parte?", "El cronómetro se para y se guarda la duración de la parte.", "Terminar parte"], lfin: ["¿Terminar el partido?", "Se cierra el marcador y se analizan las estadísticas.", "Terminar partido"] }[sh.v];
       title = Q[0];
@@ -4856,6 +4906,7 @@ var Vision = (function () {
       const P = UI.pz, j = P.j; pzSnap();
       const n = j.fichas.filter((f) => f.k === d.v).length;
       j.fichas.push({ id: (d.v === "nos" ? "n" : "r") + Date.now().toString(36), k: d.v, x: 0.5 + ((n % 3) - 1) * 0.12, y: d.v === "nos" ? 0.62 : 0.38, n: n + 1 });
+      if (d.v === "riv" && !j.rivForm) j.rivForm = null;
       if (d.v === "riv") j.riv = true;
       pzRender();
     },
@@ -4884,7 +4935,19 @@ var Vision = (function () {
     },
     pzSave: () => pzGuardar(),
     pzVideo: () => pzVideo(),
-    pzAsig: (d) => { const P = UI.pz, f = P.j.fichas.find((x) => x.id === UI.sheet.id); if (f) { f.jid = d.id || null; P.dirty = true; } closeSheet(); pzPaint(); },
+    pzAsig: (d) => {
+      const P = UI.pz, f = P.j.fichas.find((x) => x.id === UI.sheet.id);
+      if (f) {
+        /* si ese niño ya estaba en otra posición, se intercambian */
+        const otro = d.id && P.j.fichas.find((x) => x.jid === d.id && x.id !== f.id);
+        if (otro) otro.jid = f.jid || null;
+        f.jid = d.id || null; P.dirty = true;
+      }
+      closeSheet(); pzPaint();
+    },
+    pzNum: (d) => { const P = UI.pz, f = P.j.fichas.find((x) => x.id === UI.sheet.id); if (f) { f.n = Number(d.n) || null; P.dirty = true; } closeSheet(); pzPaint(); },
+    pzEq: (d) => { UI.pz.eq = d.v; pzRender(); },
+    pzRivForm: (d) => { const P = UI.pz; pzSnap(); pzRivales(P.j, true, d.v); P.eq = "riv"; pzRender(); },
     pzQuitar: () => {
       const P = UI.pz, id = UI.sheet.id; pzSnap();
       P.j.fichas = P.j.fichas.filter((x) => x.id !== id); delete P.j.pistas[id];
