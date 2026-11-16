@@ -415,7 +415,7 @@ svg.heat { display: block; width: 100%; height: auto; border-radius: 10px; color
 #vax .opt-big.on { border-color: var(--accent); background: rgba(240, 86, 27, .18); }
 
 /* Pizarra táctica */
-#piz .pz { position: fixed; inset: 0; z-index: 60; background: #0d1a13; color: #fff; display: flex; flex-direction: column; gap: 10px; padding: calc(10px + env(safe-area-inset-top)) 14px calc(14px + env(safe-area-inset-bottom)); overflow-y: auto; }
+#piz .pz { position: fixed; inset: 0; z-index: 60; background: #0d1a13; color: #fff; display: flex; flex-direction: column; gap: 10px; padding: calc(10px + env(safe-area-inset-top)) 14px calc(22px + env(safe-area-inset-bottom)); overflow-y: auto; }
 #piz .pz > * { flex-shrink: 0; }
 .pz-top { display: flex; align-items: center; gap: 8px; }
 .pz-top input { flex: 1; min-width: 0; background: rgba(255, 255, 255, .08); border: 1px solid rgba(255, 255, 255, .18); color: #fff; border-radius: 10px; padding: 9px 12px; font: inherit; font-weight: 700; }
@@ -4299,6 +4299,9 @@ var Vision = (function () {
     P.rec = true; P.play = false; P.t = 0; P.t0 = performance.now();
     cancelAnimationFrame(P.raf); P.raf = requestAnimationFrame(pzLoop);
     const b = $("#pzrec"); if (b) { b.textContent = "■ Parar la grabación"; b.classList.add("rec"); b.classList.remove("primary"); }
+    const pb = $("#pzplay"); if (pb) { pb.disabled = false; pb.innerHTML = "■ Parar y ver"; }
+    const vg = document.querySelector('#piz [data-a="pzVer"]'); if (vg) vg.disabled = false;
+    const vd = document.querySelector('#piz [data-a="pzVideo"]'); if (vd) vd.disabled = false;
   }
   function pzRecStop() {
     const P = UI.pz; if (!P.rec) return;
@@ -4375,7 +4378,10 @@ var Vision = (function () {
     if (f) openSheet({ t: f.k === "nos" ? "pzJug" : f.k === "riv" ? "pzRivN" : "pzFicha", id: f.id });
   }
   function pzGuardar(silencio) {
-    const P = UI.pz, j = P.j;
+    const P = UI.pz;
+    /* si se estaba grabando, primero se termina la grabación (si no, la jugada se guardaría sin movimiento) */
+    if (P.rec) pzRecStop();
+    const j = P.j;
     S.jugadas = S.jugadas || [];
     if (!j.nombre.trim()) j.nombre = "Jugada " + (S.jugadas.length + (P.id ? 0 : 1));
     j.ts = Date.now();
@@ -4433,6 +4439,7 @@ var Vision = (function () {
   }
   function pzCerrar() {
     const P = UI.pz; if (!P) return;
+    if (P.rec) pzRecStop();
     cancelAnimationFrame(P.raf);
     const j = P.j, algo = Object.keys(j.pistas).length || (j.dib || []).length || j.nombre.trim();
     if (P.dirty && algo) pzGuardar(true);
@@ -4921,7 +4928,9 @@ var Vision = (function () {
     pzDibT: (d) => { UI.pz.dib = d.v; pzRender(); },
     pzClearDib: () => { const P = UI.pz; pzSnap(); P.j.dib = []; pzRender(); },
     pzPlay: () => {
-      const P = UI.pz; if (!P || !P.j.dur) return;
+      const P = UI.pz; if (!P) return;
+      if (P.rec) { pzRecStop(); if (P.j.dur) setTimeout(() => ACT.pzPlay(), 60); return; }
+      if (!P.j.dur) return;
       const b = $("#pzplay");
       if (P.play && !P.ver) { P.play = false; cancelAnimationFrame(P.raf); if (b) b.innerHTML = ic("play") + " Reproducir"; return; }
       pzPlay(P.ver || P.t >= P.j.dur ? 0 : P.t);
@@ -4929,12 +4938,13 @@ var Vision = (function () {
     },
     pzSpeed: (d, el) => { const P = UI.pz; P.speed = P.speed === 1 ? 0.5 : 1; if (P.play) P.t0 = performance.now() - P.t / P.speed; el.textContent = P.speed === 1 ? "1×" : "½×"; },
     pzVer: () => {
-      const P = UI.pz; P.ver = !P.ver; P.play = false; cancelAnimationFrame(P.raf); P.t = 0;
+      const P = UI.pz; if (P.rec) pzRecStop();
+      P.ver = !P.ver; P.play = false; cancelAnimationFrame(P.raf); P.t = 0;
       pzRender();
       if (P.ver) setTimeout(() => { if (UI.pz && UI.pz.ver) pzPlay(0); }, 350);
     },
     pzSave: () => pzGuardar(),
-    pzVideo: () => pzVideo(),
+    pzVideo: () => { if (UI.pz && UI.pz.rec) pzRecStop(); pzVideo(); },
     pzAsig: (d) => {
       const P = UI.pz, f = P.j.fichas.find((x) => x.id === UI.sheet.id);
       if (f) {
