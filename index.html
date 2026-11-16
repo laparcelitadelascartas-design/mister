@@ -281,6 +281,15 @@ details .inner { display: flex; flex-direction: column; gap: 12px; padding-top: 
 .lv .pitch { border-radius: 12px; max-height: 34vh; }
 .lv-next { font-size: 14px; color: rgba(255, 255, 255, .7); border-top: 1px solid rgba(255, 255, 255, .12); padding-top: 10px; }
 .lv ul.pts { color: rgba(255, 255, 255, .88); }
+.lv-ph.trans { background: #c98a12; }
+.lv-sub { margin: 0; font-size: 13px; letter-spacing: .08em; text-transform: uppercase; color: rgba(255, 255, 255, .6); font-weight: 700; }
+.lv-rest { margin: -4px 0 0; text-align: center; font-size: 14px; color: rgba(255, 255, 255, .7); font-variant-numeric: tabular-nums; }
+.lv-top .iconbtn { font-size: 18px; }
+.lv-opt { border-top: 1px solid rgba(255, 255, 255, .12); padding-top: 10px; display: grid; gap: 8px; }
+.lv-opt > span { font-size: 13px; color: rgba(255, 255, 255, .7); font-weight: 600; }
+.lv-opt p { margin: 0; font-size: 13px; color: rgba(255, 255, 255, .6); }
+.lv-opt .chip { background: rgba(255, 255, 255, .08); border-color: rgba(255, 255, 255, .18); color: #fff; }
+.lv-opt .chip.on { background: var(--accent); border-color: var(--accent); }
 
 #toast { position: fixed; left: 50%; bottom: calc(92px + env(safe-area-inset-bottom)); transform: translateX(-50%) translateY(20px); background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 12px; font-weight: 600; font-size: 14.5px; opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; z-index: 80; max-width: 90%; text-align: center; }
 #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
@@ -376,6 +385,30 @@ a.btn { text-decoration: none; color: inherit; }
 label.btn { cursor: pointer; }
 .evlist .link { font-size: 14.5px; padding: 0; text-align: left; }
 
+/* Análisis automático del vídeo */
+#vax .lv.vax { z-index: 70; }
+#vax .lv { position: fixed; inset: 0; z-index: 70; background: #0d1a13; color: #fff; display: flex; flex-direction: column; padding: calc(12px + env(safe-area-inset-top)) 16px calc(16px + env(safe-area-inset-bottom)); gap: 12px; overflow-y: auto; }
+#vax .lv p { margin: 0; color: rgba(255, 255, 255, .86); }
+#vax .lv .muted { color: rgba(255, 255, 255, .6); font-size: 14px; }
+#vax .lv .note { background: rgba(255, 255, 255, .08); color: rgba(255, 255, 255, .85); border-left-color: #ffd23f; }
+#vax .btn:not(.primary) { background: rgba(255, 255, 255, .08); border-color: rgba(255, 255, 255, .2); color: #fff; }
+#vax .btn[disabled] { opacity: .45; }
+#vax .chip { background: rgba(255, 255, 255, .08); border-color: rgba(255, 255, 255, .2); color: #fff; flex-direction: row; align-items: center; gap: 8px; }
+#vax .chip.on { background: var(--accent); border-color: var(--accent); }
+.vacv { border-radius: 12px; overflow: hidden; background: #3a3f3c; touch-action: none; }
+.vacv canvas { display: block; width: 100%; touch-action: none; }
+.sw { display: inline-block; width: 18px; height: 18px; border-radius: 50%; border: 2px solid #fff; }
+.check { display: flex; gap: 10px; align-items: center; font-size: 15px; }
+.check input { width: 22px; height: 22px; accent-color: var(--accent); }
+.vaprev { position: relative; border-radius: 12px; overflow: hidden; background: #000; }
+.vaprev video, .vaprev canvas { display: block; width: 100%; }
+.vaprev canvas { position: absolute; inset: 0; height: 100%; }
+svg.heat { display: block; width: 100%; height: auto; border-radius: 10px; color: var(--muted); margin: 8px 0; }
+.evlist.va li { grid-template-columns: 64px 1fr; }
+.evlist.va .vabtn { grid-column: 1 / -1; display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.evlist.va .vabtn .iconbtn { margin-left: auto; }
+.stat b small { font-size: .55em; font-weight: 600; }
+
 </style>
 </head>
 <body>
@@ -385,7 +418,7 @@ label.btn { cursor: pointer; }
 <div id="live"></div>
 <div id="toast" role="status" aria-live="polite"></div>
 <script>
-var VERSION = "web 15/11/2026";
+var VERSION = "web 16/11/2026";
 var LOGO = "data:image/png;base64,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";
 
 /* =========================================================
@@ -1748,6 +1781,447 @@ var FCF = (function () {
   return { norm: norm, disponible: disponible, abrir: abrir, actualizar: actualizar, parsePartidos: parsePartidos, parseEquips: parseEquips, parseClas: parseClas, bonito: bonito, clean: clean };
 })();
 
+/* Análisis automático del vídeo del partido, todo dentro del móvil (sin internet y gratis).
+   - Imagen: con el campo calibrado (4 esquinas) y la cámara fija, separa a los jugadores del césped
+     comparando cada fotograma con el «campo vacío» (fondo) y los clasifica por el color de la camiseta.
+   - Sonido: busca subidas fuertes de ruido (celebraciones) y pitidos de silbato.
+   - Con todo eso: mapas de calor, tiempo en cada zona, longitud y anchura del equipo, saques de centro
+     (inicios de parte y posibles goles). */
+var Vision = (function () {
+  "use strict";
+
+  /* ---------- homografía (imagen ⇄ campo) ---------- */
+  function solve(A, b) {
+    var n = b.length, M = A.map(function (r, i) { return r.concat([b[i]]); });
+    for (var c = 0; c < n; c++) {
+      var p = c;
+      for (var r = c + 1; r < n; r++) if (Math.abs(M[r][c]) > Math.abs(M[p][c])) p = r;
+      var t = M[c]; M[c] = M[p]; M[p] = t;
+      if (Math.abs(M[c][c]) < 1e-12) return null;
+      for (r = 0; r < n; r++) {
+        if (r === c) continue;
+        var f = M[r][c] / M[c][c];
+        for (var k = c; k <= n; k++) M[r][k] -= f * M[c][k];
+      }
+    }
+    return M.map(function (r, i) { return r[n] / r[i]; });
+  }
+  function homography(src, dst) {
+    var A = [], b = [];
+    for (var i = 0; i < 4; i++) {
+      var x = src[i][0], y = src[i][1], u = dst[i][0], v = dst[i][1];
+      A.push([x, y, 1, 0, 0, 0, -u * x, -u * y]); b.push(u);
+      A.push([0, 0, 0, x, y, 1, -v * x, -v * y]); b.push(v);
+    }
+    var h = solve(A, b);
+    return h ? h.concat([1]) : null;
+  }
+  function apply(H, x, y) {
+    var w = H[6] * x + H[7] * y + H[8];
+    return [(H[0] * x + H[1] * y + H[2]) / w, (H[3] * x + H[4] * y + H[5]) / w, w];
+  }
+  function invert(m) {
+    var a = m[0], b = m[1], c = m[2], d = m[3], e = m[4], f = m[5], g = m[6], h = m[7], i = m[8];
+    var A = e * i - f * h, B = -(d * i - f * g), C = d * h - e * g, det = a * A + b * B + c * C;
+    return [A / det, -(b * i - c * h) / det, (b * f - c * e) / det, B / det, (a * i - c * g) / det, -(a * f - c * d) / det, C / det, -(a * h - b * g) / det, (a * e - b * d) / det];
+  }
+  /* Esquinas en orden: lejana izquierda, lejana derecha, cercana derecha, cercana izquierda */
+  var UNIT = [[0, 0], [1, 0], [1, 1], [0, 1]];
+
+  /* ---------- color ---------- */
+  function lin(c) { c /= 255; return c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); }
+  function lab(r, g, b) {
+    var R = lin(r), G = lin(g), B = lin(b);
+    var x = (R * 0.4124 + G * 0.3576 + B * 0.1805) / 0.95047, y = R * 0.2126 + G * 0.7152 + B * 0.0722, z = (R * 0.0193 + G * 0.1192 + B * 0.9505) / 1.08883;
+    var f = function (t) { return t > 0.008856 ? Math.cbrt(t) : 7.787 * t + 16 / 116; };
+    var fx = f(x), fy = f(y), fz = f(z);
+    return [116 * fy - 16, 500 * (fx - fy), 200 * (fy - fz)];
+  }
+  function dE(a, b) { var l = (a[0] - b[0]) * 0.55, x = a[1] - b[1], y = a[2] - b[2]; return Math.sqrt(l * l + x * x + y * y); }
+  function cesped(r, g, b) { return g > r + 4 && g >= b; }
+  function median(a) { var s = a.slice().sort(function (x, y) { return x - y; }); return s.length ? s[s.length >> 1] : 0; }
+
+  /* Color de la camiseta alrededor de un punto (mediana de una ventana pequeña) */
+  function muestra(data, W, H, x, y, rad) {
+    var all = [], camis = [];
+    rad = rad || 3;
+    for (var j = -rad; j <= rad; j++) for (var i = -rad; i <= rad; i++) {
+      var X = Math.round(x) + i, Y = Math.round(y) + j;
+      if (X < 0 || Y < 0 || X >= W || Y >= H) continue;
+      var k = (Y * W + X) * 4, c = [data[k], data[k + 1], data[k + 2]];
+      all.push(c);
+      if (!cesped(c[0], c[1], c[2])) camis.push(c);
+    }
+    /* si se ha tocado un jugador pequeño, quitar el césped que hay alrededor */
+    var src = camis.length >= 3 ? camis : all;
+    /* el color que más se repite (la camiseta), no una mezcla con el pantalón o la piel */
+    var L = src.map(function (c) { return lab(c[0], c[1], c[2]); }), best = 0, bn = -1;
+    for (var a = 0; a < L.length; a++) {
+      var nn = 0, sat = Math.hypot(L[a][1], L[a][2]);
+      for (var b = 0; b < L.length; b++) if (dE(L[a], L[b]) < 14) nn++;
+      nn += sat / 1000;
+      if (nn > bn) { bn = nn; best = a; }
+    }
+    if (!src.length) return [128, 128, 128];
+    /* media de los píxeles parecidos al elegido */
+    var m = [0, 0, 0], k = 0;
+    for (var c = 0; c < L.length; c++) if (dE(L[best], L[c]) < 14) { m[0] += src[c][0]; m[1] += src[c][1]; m[2] += src[c][2]; k++; }
+    return [Math.round(m[0] / k), Math.round(m[1] / k), Math.round(m[2] / k)];
+  }
+
+  /* ---------- analizador de fotogramas ---------- */
+  function Campo(o) {
+    this.W = o.W; this.H = o.H;
+    this.largo = o.largo || 60; this.ancho = o.ancho || 40;
+    this.Hm = homography(o.pts, UNIT);
+    if (!this.Hm) throw new Error("Las esquinas no forman un campo");
+    this.Hi = invert(this.Hm);
+    this.nos = o.nos ? lab(o.nos[0], o.nos[1], o.nos[2]) : null;
+    this.riv = o.riv ? lab(o.riv[0], o.riv[1], o.riv[2]) : null;
+    /* si un equipo viste de verde, no se puede descartar el color del césped al mirar las camisetas */
+    this.verde = !!((o.nos && cesped(o.nos[0], o.nos[1], o.nos[2])) || (o.riv && cesped(o.riv[0], o.riv[1], o.riv[2])));
+    var W = this.W, H = this.H, n = W * H;
+    var c = apply(this.Hi, 0.5, 0.5), sw = apply(this.Hm, c[0], c[1])[2] > 0 ? 1 : -1;
+    this.mask = new Uint8Array(n);
+    this.cnt = 0;
+    for (var y = 0; y < H; y++) for (var x = 0; x < W; x++) {
+      var q = apply(this.Hm, x + 0.5, y + 0.5);
+      if (q[2] * sw <= 0) continue;
+      if (q[0] >= -0.04 && q[0] <= 1.04 && q[1] >= -0.06 && q[1] <= 1.04) { this.mask[y * W + x] = 1; this.cnt++; }
+    }
+    this.bg = null;
+    this.fg = new Uint8Array(n);
+    this.lbl = new Int32Array(n);
+  }
+  /* Píxeles por metro en un punto de la imagen (para saber cuánto mide un jugador allí) */
+  Campo.prototype.ppm = function (x, y) {
+    var q = apply(this.Hm, x, y), a = apply(this.Hi, q[0], q[1]), b = apply(this.Hi, q[0] + 1 / this.largo, q[1]);
+    return Math.max(0.5, Math.hypot(b[0] - a[0], b[1] - a[1]));
+  };
+  /* Fondo = mediana de varios fotogramas repartidos por el partido (el campo «vacío») */
+  Campo.prototype.fondo = function (frames) {
+    var n = this.W * this.H, F = frames.length, bg = new Float32Array(n * 3), tmp = new Array(F);
+    for (var p = 0; p < n; p++) {
+      if (!this.mask[p]) continue;
+      for (var ch = 0; ch < 3; ch++) {
+        for (var f = 0; f < F; f++) tmp[f] = frames[f][p * 4 + ch];
+        tmp.sort(function (a, b) { return a - b; });
+        bg[p * 3 + ch] = tmp[F >> 1];
+      }
+    }
+    this.bg = bg;
+  };
+  /* Analiza un fotograma (RGBA) y devuelve los jugadores en coordenadas de campo (0..1) */
+  Campo.prototype.frame = function (d) {
+    var W = this.W, H = this.H, n = W * H, mask = this.mask, bg = this.bg, fg = this.fg, lbl = this.lbl;
+    /* 1. Compensar cambios de luz (nubes, exposición automática) */
+    var sc = 0, sb = 0, p, k;
+    for (p = 0; p < n; p += 5) {
+      if (!mask[p]) continue;
+      k = p * 4;
+      if (!cesped(d[k], d[k + 1], d[k + 2])) continue;
+      sc += d[k] + d[k + 1] + d[k + 2]; sb += bg[p * 3] + bg[p * 3 + 1] + bg[p * 3 + 2];
+    }
+    var gain = sc > 0 ? Math.max(0.6, Math.min(1.7, sb / sc)) : 1;
+    /* 2. Píxeles que no son césped y que no estaban en el campo vacío */
+    var nfg = 0, T = 70;
+    for (p = 0; p < n; p++) {
+      fg[p] = 0;
+      if (!mask[p]) continue;
+      k = p * 4;
+      var r = d[k] * gain, g = d[k + 1] * gain, b = d[k + 2] * gain, q = p * 3;
+      var diff = Math.abs(r - bg[q]) + Math.abs(g - bg[q + 1]) + Math.abs(b - bg[q + 2]);
+      if (diff > T && !(cesped(r, g, b) && diff < 2.5 * T)) { fg[p] = 1; nfg++; }
+      else {
+        /* el fondo se adapta poco a poco a la luz */
+        bg[q] += (r - bg[q]) * 0.03; bg[q + 1] += (g - bg[q + 1]) * 0.03; bg[q + 2] += (b - bg[q + 2]) * 0.03;
+      }
+    }
+    var ratio = nfg / Math.max(1, this.cnt);
+    if (ratio > 0.3) return { pts: [], ratio: ratio, movida: true };
+    /* 3. Manchas conectadas */
+    lbl.fill(0);
+    var blobs = [], stack = [];
+    for (p = 0; p < n; p++) {
+      if (!fg[p] || lbl[p]) continue;
+      var id = blobs.length + 1, bl = { x0: W, x1: 0, y0: H, y1: 0, px: [] };
+      lbl[p] = id; stack.length = 0; stack.push(p);
+      while (stack.length) {
+        var c = stack.pop(), cx = c % W, cy = (c - cx) / W;
+        bl.px.push(c);
+        if (cx < bl.x0) bl.x0 = cx; if (cx > bl.x1) bl.x1 = cx; if (cy < bl.y0) bl.y0 = cy; if (cy > bl.y1) bl.y1 = cy;
+        for (var dy = -1; dy <= 1; dy++) for (var dx = -1; dx <= 1; dx++) {
+          var nx = cx + dx, ny = cy + dy;
+          if (nx < 0 || ny < 0 || nx >= W || ny >= H) continue;
+          var nq = ny * W + nx;
+          if (fg[nq] && !lbl[nq]) { lbl[nq] = id; stack.push(nq); }
+        }
+      }
+      blobs.push(bl);
+    }
+    /* 4. Cada mancha → uno o varios jugadores (si están pegados de lado) */
+    var pts = [];
+    for (var i = 0; i < blobs.length; i++) {
+      var B = blobs[i], bw = B.x1 - B.x0 + 1, bh = B.y1 - B.y0 + 1;
+      var foot = [(B.x0 + B.x1) / 2, B.y1 + 1], ppm = this.ppm(foot[0], foot[1]), hp = 1.3 * ppm;
+      if (bh < 0.35 * hp || B.px.length < Math.max(4, 0.05 * hp * hp)) continue;
+      var anchoM = bw / ppm, nj = Math.max(1, Math.min(6, Math.round(anchoM / 0.85)));
+      var peso = Math.max(1, Math.min(3, Math.round(bh / (1.15 * hp))));
+      for (var s = 0; s < nj; s++) {
+        var sx0 = B.x0 + (bw * s) / nj, sx1 = B.x0 + (bw * (s + 1)) / nj;
+        var low = -1, sumx = 0, cnt = 0, R = 0, G = 0, Bc = 0, cc = 0, v1 = 0, v2 = 0;
+        var top = B.y0 + bh * 0.12, mid = B.y0 + bh * 0.6;
+        for (var j = 0; j < B.px.length; j++) {
+          var pp = B.px[j], px = pp % W, py = (pp - px) / W;
+          if (px < sx0 || px >= sx1) continue;
+          if (py > low) low = py;
+          sumx += px; cnt++;
+          if (py >= top && py <= mid) {
+            var kk = pp * 4; R += d[kk]; G += d[kk + 1]; Bc += d[kk + 2]; cc++;
+            /* cada píxel de la camiseta vota por el equipo al que más se parece */
+            if (this.nos && this.riv && (this.verde || !cesped(d[kk], d[kk + 1], d[kk + 2]))) {
+              var Lp = lab(d[kk], d[kk + 1], d[kk + 2]), e1 = dE(Lp, this.nos), e2 = dE(Lp, this.riv);
+              if (e1 < e2 * 0.75 && e1 < 70) v1++; else if (e2 < e1 * 0.75 && e2 < 70) v2++;
+            }
+          }
+        }
+        if (!cnt) continue;
+        var q2 = apply(this.Hm, sumx / cnt, low + 1);
+        if (q2[0] < -0.03 || q2[0] > 1.03 || q2[1] < -0.05 || q2[1] > 1.03) continue;
+        var team = 0;
+        if (cc && this.nos && this.riv) {
+          var L = lab(R / cc, G / cc, Bc / cc), d1 = dE(L, this.nos), d2 = dE(L, this.riv);
+          if (v1 >= 2 && v1 >= 1.5 * v2) team = 1;
+          else if (v2 >= 2 && v2 >= 1.5 * v1) team = 2;
+          else if (d1 < d2 * 0.75 && d1 < 70) team = 1;
+          else if (d2 < d1 * 0.75 && d2 < 70) team = 2;
+          if (this.debug) this.debug.push([Math.round(R / cc), Math.round(G / cc), Math.round(Bc / cc), Math.round(d1), Math.round(d2), v1, v2, team, +q2[0].toFixed(2), +q2[1].toFixed(2), bw, bh, B.px.length]);
+        }
+        pts.push([Math.max(0, Math.min(1, q2[0])), Math.max(0, Math.min(1, q2[1])), team, peso]);
+      }
+    }
+    return { pts: pts, ratio: ratio, movida: false };
+  };
+
+  /* ---------- sonido ---------- */
+  /* Recibe [{t, db, wh}] (cada ~0,5 s del vídeo) y devuelve celebraciones y pitidos */
+  function audioEventos(bins) {
+    if (!bins.length) return { ruido: [], silbato: [], ok: false };
+    var ok = bins.some(function (b) { return b.db > -90; });
+    if (!ok) return { ruido: [], silbato: [], ok: false };
+    /* volumen por segundo */
+    var sec = {}, pito = {};
+    bins.forEach(function (b) { if (b.wh >= 24 && b.wl >= -62) { pito[Math.floor(b.t)] = 1; pito[Math.floor(b.t + 0.5)] = 1; } });
+    bins.forEach(function (b) { var s = Math.floor(b.t); if (pito[s]) return; sec[s] = Math.max(sec[s] == null ? -120 : sec[s], b.db); });
+    var ts = Object.keys(sec).map(Number).sort(function (a, b) { return a - b; });
+    var vals = ts.map(function (t) { return sec[t]; });
+    var exc = vals.map(function (v, i) {
+      var lo = Math.max(0, i - 30), hi = Math.min(vals.length, i + 31);
+      return v - median(vals.slice(lo, hi));
+    });
+    var ruido = [], i = 0;
+    while (i < ts.length) {
+      if (exc[i] >= 7) {
+        var j = i, mx = exc[i];
+        while (j + 1 < ts.length && exc[j + 1] >= 5 && ts[j + 1] - ts[j] <= 2) { j++; mx = Math.max(mx, exc[j]); }
+        if (ts[j] - ts[i] >= 2) ruido.push([ts[i], Math.round(mx)]);
+        i = j + 1;
+      } else i++;
+    }
+    /* juntar celebraciones muy seguidas y quedarse con las más fuertes */
+    var junt = [];
+    ruido.forEach(function (r) { var l = junt[junt.length - 1]; if (l && r[0] - l[0] < 15) { if (r[1] > l[1]) { l[0] = r[0]; l[1] = r[1]; } } else junt.push(r.slice()); });
+    junt = junt.sort(function (a, b) { return b[1] - a[1]; }).slice(0, 20).sort(function (a, b) { return a[0] - b[0]; });
+    /* silbatos: tono puro y fuerte entre 2 y 4,5 kHz */
+    var sil = [];
+    bins.forEach(function (b) {
+      if (b.wh < 24 || b.wl < -62) return;
+      var l = sil[sil.length - 1];
+      if (l && b.t - l[1] <= 1.2) l[1] = b.t; else sil.push([b.t, b.t]);
+    });
+    return { ruido: junt, silbato: sil.map(function (s) { return [Math.round(s[0] * 10) / 10, Math.round((s[1] - s[0] + 0.5) * 10) / 10]; }), ok: true };
+  }
+
+  /* ---------- guardar las muestras en poco espacio ---------- */
+  var GX = 40, GY = 26;
+  function b36(n, l) { var s = n.toString(36); while (s.length < l) s = "0" + s; return s; }
+  function codificar(samples) {
+    return samples.map(function (s) {
+      return b36(Math.round(s.t * 2), 1) + ":" + (s.mov ? "!" : s.pts.map(function (p) {
+        var code = p[2] * 3 + (Math.min(3, p[3]) - 1), ui = Math.min(GX - 1, Math.floor(p[0] * GX)), vi = Math.min(GY - 1, Math.floor(p[1] * GY));
+        return b36((code * GX + ui) * GY + vi, 3);
+      }).join(""));
+    }).join(";");
+  }
+  function decodificar(str) {
+    if (!str) return [];
+    return str.split(";").map(function (x) {
+      var i = x.indexOf(":"), t = parseInt(x.slice(0, i), 36) / 2, rest = x.slice(i + 1);
+      if (rest === "!") return { t: t, mov: true, pts: [] };
+      var pts = [];
+      for (var k = 0; k + 3 <= rest.length; k += 3) {
+        var n = parseInt(rest.slice(k, k + 3), 36), vi = n % GY, ui = Math.floor(n / GY) % GX, code = Math.floor(n / (GX * GY));
+        pts.push([(ui + 0.5) / GX, (vi + 0.5) / GY, Math.floor(code / 3), (code % 3) + 1]);
+      }
+      return { t: t, pts: pts };
+    });
+  }
+
+  /* ---------- saques de centro: cada equipo en su mitad ---------- */
+  function centro(pts) { var u = 0, v = 0; pts.forEach(function (p) { u += p[0]; v += p[1]; }); return [u / pts.length, v / pts.length]; }
+  function saques(samples) {
+    var prev = null;
+    var marca = samples.map(function (s) {
+      var a = s.pts.filter(function (p) { return p[2] === 1; }), b = s.pts.filter(function (p) { return p[2] === 2; });
+      var ca = a.length ? centro(a) : null, cb = b.length ? centro(b) : null, pr = prev;
+      prev = s.mov ? null : { a: ca, b: cb, t: s.t };
+      if (s.mov || a.length < 3 || b.length < 3) return 0;
+      var fa = a.filter(function (p) { return p[0] < 0.5; }).length / a.length, fb = b.filter(function (p) { return p[0] < 0.5; }).length / b.length;
+      var cu = centro(a.concat(b))[0];
+      if (Math.abs(cu - 0.5) > 0.12) return 0;
+      /* repartidos a lo ancho del campo (no todos camino del banquillo) */
+      var sv = function (l) { var m = centro(l)[1]; return Math.sqrt(l.reduce(function (x, p) { return x + (p[1] - m) * (p[1] - m); }, 0) / l.length); };
+      if (sv(a) < 0.12 || sv(b) < 0.12) return 0;
+      /* quietos esperando el saque */
+      if (!pr || !pr.a || !pr.b || s.t - pr.t > 2.5) return 0;
+      var mv = Math.max(Math.hypot(ca[0] - pr.a[0], ca[1] - pr.a[1]), Math.hypot(cb[0] - pr.b[0], cb[1] - pr.b[1])) / Math.max(0.5, s.t - pr.t);
+      if (mv > 0.02) return 0;
+      if (fa >= 0.85 && fb <= 0.15) return 1; /* nosotros en la mitad izquierda */
+      if (fa <= 0.15 && fb >= 0.85) return -1;
+      return 0;
+    });
+    var out = [], i = 0;
+    while (i < samples.length) {
+      if (!marca[i]) { i++; continue; }
+      var j = i, lado = marca[i], gap = 0;
+      while (j + 1 < samples.length && (marca[j + 1] === lado || (gap < 1 && marca[j + 2] === lado))) { if (marca[j + 1] !== lado) gap++; j++; }
+      if (samples[j].t - samples[i].t >= 2) {
+        var l = out[out.length - 1];
+        /* jugadores que se van colocando: es el mismo saque */
+        if (l && l.lado === lado && samples[i].t - l.t1 <= 8) l.t1 = samples[j].t;
+        else out.push({ t0: samples[i].t, t1: samples[j].t, lado: lado });
+      }
+      i = j + 1;
+    }
+    return out;
+  }
+
+  /* ---------- resumen para el entrenador ---------- */
+  /* cfg: {ini:{parte:segundo}, P, M, dir (1 = en la 1ª parte atacamos hacia la derecha), cambio, largo, ancho} */
+  function parteDe(cfg, t) {
+    var p = 1, ks = Object.keys(cfg.ini || {}).map(Number).sort(function (a, b) { return a - b; });
+    ks.forEach(function (k) { if (cfg.ini[k] <= t) p = k; });
+    return p;
+  }
+  function enJuego(cfg, t) {
+    var ks = Object.keys(cfg.ini || {});
+    if (!ks.length) return true;
+    var p = parteDe(cfg, t), a = cfg.ini[p];
+    if (a == null || t < a) return false;
+    return t <= a + cfg.M * 60 + Math.min(60, cfg.M * 60 * 0.08);
+  }
+  function giro(cfg, p) { var f = cfg.dir < 0; if (cfg.cambio && p > cfg.P / 2) f = !f; return f; }
+  function resumen(samples, cfg) {
+    var GW = 12, GH = 8, heat = { nos: new Array(GW * GH).fill(0), riv: new Array(GW * GH).fill(0), juego: new Array(GW * GH).fill(0) };
+    var n = 0, mov = 0, ter = [0, 0, 0], mitad = 0, blq = { n: 0, largo: 0, ancho: 0, altura: 0 }, partes = {}, cuentas = { nos: 0, riv: 0 };
+    samples.forEach(function (s) {
+      if (!enJuego(cfg, s.t)) return;
+      if (s.mov) { mov++; return; }
+      var p = parteDe(cfg, s.t), f = giro(cfg, p);
+      var pts = s.pts.map(function (q) { return f ? [1 - q[0], 1 - q[1], q[2], q[3]] : q; });
+      if (pts.length < 2) return;
+      n++;
+      var su = 0, sv = 0, sw = 0, nos = [];
+      pts.forEach(function (q) {
+        var cell = Math.min(GH - 1, Math.floor(q[1] * GH)) * GW + Math.min(GW - 1, Math.floor(q[0] * GW));
+        if (q[2] === 1) { heat.nos[cell] += q[3]; nos.push(q); cuentas.nos += q[3]; }
+        else if (q[2] === 2) { heat.riv[cell] += q[3]; cuentas.riv += q[3]; }
+        su += q[0] * q[3]; sv += q[1] * q[3]; sw += q[3];
+      });
+      var cu = su / sw, cv = sv / sw;
+      heat.juego[Math.min(GH - 1, Math.floor(cv * GH)) * GW + Math.min(GW - 1, Math.floor(cu * GW))] += 1;
+      ter[cu < 1 / 3 ? 0 : cu < 2 / 3 ? 1 : 2]++;
+      if (cu > 0.5) mitad++;
+      partes[p] = partes[p] || { n: 0, mitad: 0 }; partes[p].n++; if (cu > 0.5) partes[p].mitad++;
+      /* bloque: sin el portero (el más cercano a su portería si está muy atrás) */
+      nos.sort(function (a, b) { return a[0] - b[0]; });
+      if (nos.length && nos[0][0] < 0.12) nos = nos.slice(1);
+      if (nos.length >= 3) {
+        var us = nos.map(function (q) { return q[0]; }), vs = nos.map(function (q) { return q[1]; }).sort(function (a, b) { return a - b; });
+        blq.n++; blq.largo += (us[us.length - 1] - us[0]) * cfg.largo; blq.ancho += (vs[vs.length - 1] - vs[0]) * cfg.ancho;
+        blq.altura += us.reduce(function (a, b) { return a + b; }, 0) / us.length;
+      }
+    });
+    var pc = function (x) { return n ? Math.round((x / n) * 100) : 0; };
+    /* suavizado 3×3 para que el mapa se lea mejor */
+    var suave = function (a) {
+      return a.map(function (_, i) {
+        var x = i % GW, y = (i - x) / GW, s = 0, w = 0;
+        for (var dy = -1; dy <= 1; dy++) for (var dx = -1; dx <= 1; dx++) {
+          var X = x + dx, Y = y + dy; if (X < 0 || Y < 0 || X >= GW || Y >= GH) continue;
+          var k = (dx ? 1 : 2) * (dy ? 1 : 2); s += a[Y * GW + X] * k; w += k;
+        }
+        return s / w;
+      });
+    };
+    var norm = function (a) { a = suave(a); var m = Math.max.apply(null, a) || 1; return a.map(function (x) { return Math.round((x / m) * 100) / 100; }); };
+    return {
+      n: n, mov: mov, heat: { nos: norm(heat.nos), riv: norm(heat.riv), juego: norm(heat.juego) },
+      equipos: n ? Math.round((cuentas.nos + cuentas.riv) / n * 10) / 10 : 0, porEquipo: n ? [Math.round(cuentas.nos / n * 10) / 10, Math.round(cuentas.riv / n * 10) / 10] : [0, 0],
+      tercios: { def: pc(ter[0]), med: pc(ter[1]), ata: pc(ter[2]) }, mitad: pc(mitad),
+      bloque: blq.n ? { largo: Math.round(blq.largo / blq.n), ancho: Math.round(blq.ancho / blq.n), altura: Math.round((blq.altura / blq.n) * 100) / 100, n: blq.n } : null,
+      partes: Object.keys(partes).map(Number).sort(function (a, b) { return a - b; }).map(function (p) { return { p: p, n: partes[p].n, mitad: Math.round((partes[p].mitad / partes[p].n) * 100) }; })
+    };
+  }
+
+  /* Inicios de parte: primer saque de centro (o pitido) y cada siguiente después de una parte entera */
+  function iniciosParte(sq, aud, P, M) {
+    var sil = (aud && aud.silbato) || [], cand;
+    if (sq.length) cand = sq.map(function (s) {
+      var w = sil.find(function (x) { return x[0] >= s.t0 - 1 && x[0] <= s.t1 + 4; });
+      return w ? w[0] : s.t1;
+    });
+    else cand = sil.map(function (x) { return x[0]; });
+    var out = [];
+    for (var i = 0; i < cand.length && out.length < P; i++) {
+      var prev = out[out.length - 1];
+      if (prev == null || cand[i] >= prev + M * 60 * 0.95) out.push(Math.round(cand[i]));
+    }
+    return out;
+  }
+
+  /* Momentos para revisar: saques de centro dentro de una parte (= gol justo antes) y celebraciones */
+  function momentos(samples, sq, aud, cfg) {
+    var out = [], usados = {}, ruido = (aud && aud.ruido) || [];
+    var inis = Object.keys(cfg.ini || {}).map(function (k) { return cfg.ini[k]; });
+    sq.forEach(function (s) {
+      /* el saque que abre una parte no es un gol */
+      if (inis.some(function (a) { return a >= s.t0 - 5 && a <= s.t1 + 8; })) return;
+      if (!inis.length && s === sq[0]) return;
+      if (!enJuego(cfg, s.t0) && inis.length) return;
+      var r = ruido.filter(function (x) { return x[0] >= s.t0 - 75 && x[0] <= s.t1 + 1; }).pop();
+      if (r) usados[r[0]] = 1;
+      /* ¿hacia qué portería iba el juego justo antes? (el ataque que acaba en gol) */
+      var fin = r ? r[0] : s.t0 - 8, p = parteDe(cfg, s.t0), f = giro(cfg, p), su = 0, sn = 0;
+      samples.forEach(function (x) {
+        if (x.t < fin - 15 || x.t > fin || x.mov || !x.pts.length) return;
+        var w = 0, u = 0;
+        x.pts.forEach(function (q) { u += q[0] * q[3]; w += q[3]; });
+        su += f ? 1 - u / w : u / w; sn++;
+      });
+      var lado = sn ? su / sn : 0.5;
+      out.push({ k: "gol", t: r ? r[0] : Math.max(0, s.t0 - 25), quien: lado > 0.6 ? "nos" : lado < 0.4 ? "riv" : "", fuerte: !!r });
+    });
+    ruido.forEach(function (r) {
+      if (usados[r[0]] || !enJuego(cfg, r[0])) return;
+      out.push({ k: "ruido", t: r[0], s: r[1] });
+    });
+    return out.sort(function (a, b) { return a.t - b.t; });
+  }
+
+  return { homography: homography, apply: apply, invert: invert, lab: lab, dE: dE, muestra: muestra, Campo: Campo, audioEventos: audioEventos, codificar: codificar, decodificar: decodificar, saques: saques, resumen: resumen, momentos: momentos, iniciosParte: iniciosParte, parteDe: parteDe, UNIT: UNIT };
+})();
+
 /* =========================================================
    MÍSTER · Aplicación
    ========================================================= */
@@ -2591,7 +3065,7 @@ var FCF = (function () {
     for (let p = 1; p <= v.P; p++) btns.push(`<button class="chip${ini[p] != null ? " on" : ""}" data-a="vini" data-p="${p}">P${p} ${ini[p] != null ? "· " + hms(ini[p]) : "· marcar"}</button>`);
     return `<div class="card-h"><h2>Inicio de cada parte</h2></div>
       <p class="muted" style="font-size:14px">Para el vídeo en el pitido inicial de cada parte y pulsa su botón. Las acciones que anotaste en directo se colocan solas en el vídeo.</p>
-      <div class="chips">${btns.join("")}</div>${sinT ? `<p class="note">${sinT} ${sinT === 1 ? "acción del directo espera" : "acciones del directo esperan"} a que marques el inicio de su parte.</p>` : ""}`;
+      <div class="chips">${btns.join("")}</div>${(() => { const sg = vaSugIni(m); return sg ? `<p class="note">Según el análisis del vídeo, ${sg.length === 1 ? "la parte 1 empieza en el " + hms(sg[0]) : "las partes empiezan en " + sg.map(hms).join(" · ")}. <button class="link" data-a="vaIni">Usar ${sg.length === 1 ? "este inicio" : "estos inicios"}</button></p>` : ""; })()}${sinT ? `<p class="note">${sinT} ${sinT === 1 ? "acción del directo espera" : "acciones del directo esperan"} a que marques el inicio de su parte.</p>` : ""}`;
   }
   function vJugHtml(m) {
     const l = jugadas(m), pl = S.players.filter((p) => (m.ev || []).some((e) => e.j === p.id));
@@ -2612,6 +3086,7 @@ var FCF = (function () {
     if (b) b.innerHTML = vJugHtml(m);
     if (c) c.innerHTML = vTagsHtml(m);
     if (d) d.innerHTML = vPlaybar();
+    const e = $("#vauto"); if (e) e.innerHTML = vaHtml(m);
   }
   function vPlaybar() {
     const P = UI.vplist;
@@ -2634,6 +3109,7 @@ var FCF = (function () {
       <div id="vplaybar">${vPlaybar()}</div>
       <div class="vctrl"><button data-a="vseek" data-d="-10">−10s</button><button data-a="vseek" data-d="-3">−3s</button><button class="play" data-a="vtoggle">${ic("play")}</button><button data-a="vseek" data-d="3">+3s</button><button data-a="vseek" data-d="10">+10s</button><button data-a="vrate" id="vrate">${UI.vrate || 1}×</button></div>
       <section class="card" id="vtags">${vTagsHtml(m)}</section>
+      <section class="card" id="vauto">${vaHtml(m)}</section>
       <section class="card" id="vsync">${vSyncHtml(m)}</section>
       <section class="card" id="vjug">${vJugHtml(m)}</section>
       <div class="row"><label class="btn" for="vidpick2">Cambiar de vídeo</label><input type="file" id="vidpick2" accept="video/*" class="sr" data-vid="1"><button class="btn" data-a="openM" data-id="${m.id}">Ver análisis del partido</button></div>`;
@@ -2663,6 +3139,354 @@ var FCF = (function () {
     const d = $("#vplaybar"); if (d) d.innerHTML = vPlaybar();
   }
 
+
+  /* ---------- ANÁLISIS AUTOMÁTICO DEL VÍDEO (en el móvil, gratis) ---------- */
+  const VAK = (m) => "mister_va_" + m.id;
+  const medidas = () => (S.team.cat <= 2 ? [60, 40] : [100, 64]);
+  let vaCache = null;
+  function vaData(m) {
+    const a = m.video && m.video.auto; if (!a) return null;
+    if (vaCache && vaCache.id === m.id && vaCache.ts === a.ts) return vaCache;
+    let raw = null;
+    try { raw = JSON.parse(localStorage.getItem(VAK(m)) || "null"); } catch (e) { raw = null; }
+    if (!raw) return null;
+    const samples = Vision.decodificar(raw.s);
+    vaCache = { id: m.id, ts: a.ts, samples, aud: raw.a || { ruido: [], silbato: [], ok: false }, sq: Vision.saques(samples) };
+    return vaCache;
+  }
+  function vaCfg(m) {
+    const v = vivo(m), c = m.video.cal || {}, md = medidas();
+    return { ini: m.video.ini || {}, P: v.P, M: v.M, dir: c.dir || 1, cambio: c.cambio !== false, largo: md[0], ancho: md[1] };
+  }
+  /* Lectura para el entrenador a partir de los números del vídeo */
+  function vaLectura(r, cfg) {
+    const out = [], ent = Analisis.entrenables(S.team.cat);
+    const add = (c, txt) => { if (c && ent.indexOf(c) < 0) c = null; out.push({ c, txt }); };
+    if (r.n < 20) return out;
+    if (r.tercios.def >= 40) add("salida", "El juego ha estado el " + r.tercios.def + "% del tiempo en vuestro tercio defensivo: cuesta salir jugando y alejar el balón de la portería.");
+    else if (r.mitad <= 40) add("progresion", "Solo el " + r.mitad + "% del tiempo se ha jugado en campo rival: cuesta avanzar con el balón.");
+    if (r.mitad >= 60) add(null, "Dominio del campo: el " + r.mitad + "% del tiempo se ha jugado en campo rival.");
+    if (r.bloque) {
+      if (r.bloque.largo > cfg.largo * 0.55) add("bloque", "Equipo muy estirado: de media hay unos " + r.bloque.largo + " m entre el jugador más adelantado y el más retrasado. Toca jugar más juntos.");
+      if (r.bloque.ancho < cfg.ancho * 0.45) add("amplitud", "Poca amplitud: el equipo ocupa de media unos " + r.bloque.ancho + " m de ancho. Hay que abrir el campo por las bandas.");
+      if (r.bloque.altura < 0.38) add("pressing", "Bloque muy bajo: el equipo pasa mucho tiempo cerca de su portería. Trabajar la presión tras pérdida y adelantar la defensa.");
+    }
+    const ps = r.partes.filter((p) => p.n >= 20);
+    if (ps.length >= 2) {
+      const ult = ps[ps.length - 1], prev = ps.slice(0, -1), media = prev.reduce((a, p) => a + p.mitad, 0) / prev.length;
+      if (media - ult.mitad >= 20) add("resistencia", "En la " + ult.p + "ª parte el equipo pasa mucho menos tiempo en campo rival (" + ult.mitad + "% frente a " + Math.round(media) + "%): posible cansancio o desconexión al final.");
+    }
+    return out;
+  }
+  function heatSvg(h, tipo, cfg) {
+    /* escala de color: poco = claro y transparente, mucho = intenso */
+    const ramp = tipo === "riv" ? [[170, 205, 255], [30, 70, 200]] : [[255, 226, 120], [235, 50, 20]];
+    let cells = "";
+    for (let y = 0; y < 8; y++) for (let x = 0; x < 12; x++) {
+      const v = h[y * 12 + x]; if (v < 0.08) continue;
+      const c = ramp[0].map((a, i) => Math.round(a + (ramp[1][i] - a) * v));
+      cells += `<rect x="${x * 10}" y="${y * 10}" width="10" height="10" fill="rgba(${c.join(",")},${(0.3 + v * 0.62).toFixed(2)})"/>`;
+    }
+    return `<svg class="heat" viewBox="-2 -2 124 92" role="img" aria-label="Mapa de calor: ${tipo === "nos" ? "tu equipo" : tipo === "riv" ? "rival" : "dónde se juega"}. Atacáis hacia la derecha.">
+      <rect x="0" y="0" width="120" height="80" fill="#2f7f4b"/>${cells}
+      <g fill="none" stroke="rgba(255,255,255,.85)" stroke-width=".6"><rect x="0" y="0" width="120" height="80"/><line x1="60" y1="0" x2="60" y2="80"/><circle cx="60" cy="40" r="9"/><rect x="0" y="20" width="16" height="40"/><rect x="104" y="20" width="16" height="40"/><rect x="-2" y="34" width="2" height="12"/><rect x="120" y="34" width="2" height="12"/></g>
+      <text x="60" y="89" text-anchor="middle" font-size="6" fill="currentColor">Atacáis hacia aquí →</text></svg>`;
+  }
+  function vaHtml(m) {
+    const a = m.video.auto, D = vaData(m);
+    if (!a || !D) return `<div class="card-h"><h2>Análisis automático</h2><span class="tag">Beta</span></div>
+      <p>Míster mira el vídeo dentro del móvil, sin internet y gratis: dónde se juega, cómo de junto está tu equipo, los saques de centro (posibles goles) y los momentos con más ruido.</p>
+      <p class="muted" style="font-size:14px">Funciona con el móvil quieto (en trípode) y viendo todo el campo. Tarda más o menos una cuarta parte de lo que dura el vídeo.</p>
+      <button class="btn primary" data-a="vaOpen">Analizar el vídeo</button>`;
+    const cfg = vaCfg(m), r = Vision.resumen(D.samples, cfg), lec = vaLectura(r, cfg);
+    const mom = Vision.momentos(D.samples, D.sq, D.aud, cfg).filter((x) => (m.video.hecho || []).indexOf(x.k + ":" + Math.round(x.t)) < 0);
+    const tab = UI.vamap || (r.porEquipo[0] > 0.5 ? "nos" : "juego");
+    const nuevos = lec.filter((o) => o.c && m.fallos.indexOf(o.c) < 0);
+    const sinIni = !Object.keys(m.video.ini || {}).length;
+    const st = (n, l) => `<div class="stat"><b>${n}</b><span>${l}</span></div>`;
+    return `<div class="card-h"><h2>Análisis automático</h2><button class="btn sm" data-a="vaOpen">Repetir</button></div>
+      ${r.n < 20 ? `<p class="note warn">Apenas se han visto jugadores en el campo. Revisa que las esquinas estén bien marcadas y que la cámara no se mueva.</p>` : ""}
+      <div class="chips">${[["nos", "Tu equipo"], ["riv", "Rival"], ["juego", "Dónde se juega"]].map((x) => `<button class="chip${tab === x[0] ? " on" : ""}" data-a="vaMap" data-v="${x[0]}">${x[1]}</button>`).join("")}</div>
+      ${heatSvg(r.heat[tab], tab, cfg)}
+      <div class="stats" style="grid-template-columns:repeat(4,1fr)">${st(r.mitad + "%", "Campo rival")}${st(r.tercios.def + "%", "Tercio propio")}${st(r.bloque ? r.bloque.largo + "<small> m</small>" : "–", "Largo del equipo")}${st(r.bloque ? r.bloque.ancho + "<small> m</small>" : "–", "Ancho del equipo")}</div>
+      ${r.partes.length > 1 ? `<p class="muted" style="font-size:14px">Tiempo en campo rival por partes: ${r.partes.map((p) => "P" + p.p + " " + p.mitad + "%").join(" · ")}</p>` : ""}
+      ${lec.length ? `<div class="kv"><b>Lectura del vídeo</b><ul class="pts">${lec.map((o) => `<li>${esc(o.txt)}</li>`).join("")}</ul></div>` : ""}
+      ${nuevos.length ? `<button class="btn" data-a="vaFallos">Añadir a «Qué hay que mejorar» (${nuevos.length})</button>` : ""}
+      <div class="kv"><b>Momentos para revisar</b>${mom.length ? `<ul class="evlist va">${mom.map((x) => {
+        const key = x.k + ":" + Math.round(x.t);
+        const lbl = x.k === "gol" ? (x.quien === "nos" ? "Posible gol tuyo" : x.quien === "riv" ? "Posible gol del rival" : "Posible gol") + (x.fuerte ? " · celebración" : " · saque de centro después") : "Mucho ruido: ¿gol u ocasión?";
+        return `<li><button class="link num" data-a="vgo" data-t="${x.t}">${hms(x.t)}</button><span>${lbl}</span><span class="vabtn"><button class="btn sm" data-a="vaTag" data-k="${key}" data-t="${x.t}" data-v="gol">Gol nuestro</button><button class="btn sm" data-a="vaTag" data-k="${key}" data-t="${x.t}" data-v="gol_r">Gol rival</button><button class="btn sm" data-a="vaTag" data-k="${key}" data-t="${x.t}" data-v="ocasion">Ocasión</button><button class="iconbtn sm" data-a="vaDis" data-k="${key}" aria-label="Descartar">${ic("close")}</button></span></li>`;
+      }).join("")}</ul>` : `<p class="muted" style="font-size:14px">No hay momentos pendientes.</p>`}</div>
+      ${!D.aud.ok ? `<p class="note">No se ha podido escuchar el audio del vídeo: los momentos salen solo de los saques de centro.</p>` : ""}
+      ${r.porEquipo[0] < 0.5 ? `<p class="note">Casi no distingo las camisetas de los dos equipos: repite el análisis y toca bien una camiseta de cada equipo (mejor de un jugador cercano).</p>` : ""}
+      ${r.mov > r.n * 0.1 ? `<p class="note">La cámara se ha movido en parte del vídeo: esos ratos no cuentan.</p>` : ""}
+      ${sinIni ? `<p class="note">Marca abajo el inicio de cada parte para no contar el descanso y saber cuándo cambiáis de campo.</p>` : ""}
+      <p class="muted" style="font-size:13px">Análisis automático aproximado (las medidas, calculadas para un campo de ${cfg.largo}×${cfg.ancho} m): confírmalo viendo el vídeo. No reconoce a cada jugador ni cuenta pases.</p>`;
+  }
+  function vaSugIni(m) {
+    const D = vaData(m); if (!D) return null;
+    const v = vivo(m), sug = Vision.iniciosParte(D.sq, D.aud, v.P, v.M), ini = m.video.ini || {};
+    if (!sug.length) return null;
+    const igual = sug.every((t, i) => ini[i + 1] != null && Math.abs(ini[i + 1] - t) <= 3);
+    return igual ? null : sug;
+  }
+  /* Añade una acción en un momento concreto del vídeo */
+  function addVidEv(m, tipo, vt) {
+    const ps = partFromVt(m, vt);
+    const e = { id: "e" + Date.now().toString(36) + Math.floor(Math.random() * 99), p: ps.p, s: ps.s, vt, t: tipo };
+    m.ev = m.ev || []; m.ev.push(e);
+    if (tipo === "gol" || tipo === "gol_r") syncScore(m);
+    m.lectura = lecturaStats(m); m.lectura.forEach((o) => { if (m.fallos.indexOf(o.c) < 0) m.fallos.push(o.c); });
+    return e;
+  }
+
+  /* --- asistente: esquinas, colores y dirección --- */
+  const VMX = 0.1, VMY = 0.16;
+  function vaGeom(cv) {
+    const A = UI.va, cw = cv.width, iw = cw / (1 + 2 * VMX), ih = iw * A.vh / A.vw;
+    return { iw, ih, ox: iw * VMX, oy: ih * VMY, ch: ih * (1 + 2 * VMY) };
+  }
+  function vaDraw() {
+    const A = UI.va, cv = $("#vacv"); if (!A || !cv) return;
+    const dpr = window.devicePixelRatio || 1, w = cv.clientWidth || 360;
+    cv.width = Math.round(w * dpr);
+    const g = vaGeom(cv); cv.height = Math.round(g.ch);
+    const c = cv.getContext("2d");
+    c.fillStyle = "#3a3f3c"; c.fillRect(0, 0, cv.width, cv.height);
+    c.drawImage(A.snap, g.ox, g.oy, g.iw, g.ih);
+    const P = (p) => [g.ox + p[0] * g.iw, g.oy + p[1] * g.ih];
+    const pts = A.cal.pts;
+    c.lineWidth = 2.5 * dpr; c.strokeStyle = "#ffd23f";
+    if (pts.length >= 2) { c.beginPath(); pts.forEach((p, i) => { const q = P(p); if (i) c.lineTo(q[0], q[1]); else c.moveTo(q[0], q[1]); }); if (pts.length === 4) c.closePath(); c.stroke(); }
+    if (pts.length === 4) {
+      const H = Vision.homography(Vision.UNIT, pts);
+      if (H) {
+        const L = (u, v) => P(Vision.apply(H, u, v));
+        c.strokeStyle = "rgba(255,255,255,.9)"; c.setLineDash([6 * dpr, 5 * dpr]); c.beginPath();
+        let q = L(0.5, 0); c.moveTo(q[0], q[1]); q = L(0.5, 1); c.lineTo(q[0], q[1]);
+        const md = medidas();
+        for (let k = 0; k <= 40; k++) { const an = (k / 40) * Math.PI * 2; q = L(0.5 + (7 / md[0]) * Math.cos(an), 0.5 + (7 / md[1]) * Math.sin(an)); if (k) c.lineTo(q[0], q[1]); else c.moveTo(q[0], q[1]); }
+        c.stroke(); c.setLineDash([]);
+      }
+    }
+    pts.forEach((p, i) => {
+      const q = P(p);
+      c.fillStyle = "#f0561b"; c.beginPath(); c.arc(q[0], q[1], 13 * dpr, 0, Math.PI * 2); c.fill();
+      c.fillStyle = "#fff"; c.font = `bold ${14 * dpr}px system-ui,sans-serif`; c.textAlign = "center"; c.textBaseline = "middle"; c.fillText(String(i + 1), q[0], q[1] + dpr);
+    });
+    [["nos", "Tú"], ["riv", "Rival"]].forEach((x) => {
+      const s = A.cal[x[0] + "P"]; if (!s || A.step !== "col") return;
+      const q = P(s), col = A.cal[x[0]];
+      c.fillStyle = `rgb(${col[0]},${col[1]},${col[2]})`; c.strokeStyle = "#fff"; c.lineWidth = 3 * dpr;
+      c.beginPath(); c.arc(q[0], q[1] - 26 * dpr, 12 * dpr, 0, Math.PI * 2); c.fill(); c.stroke();
+      c.fillStyle = "#fff"; c.font = `bold ${12 * dpr}px system-ui,sans-serif`; c.textAlign = "center"; c.fillText(x[1], q[0], q[1] - 46 * dpr);
+      c.beginPath(); c.arc(q[0], q[1], 4 * dpr, 0, Math.PI * 2); c.stroke();
+    });
+  }
+  function vaPointer(ev, kind) {
+    const A = UI.va, cv = $("#vacv"); if (!A || !cv) return;
+    const r = cv.getBoundingClientRect(), dpr = cv.width / r.width, g = vaGeom(cv);
+    const x = (ev.clientX - r.left) * dpr, y = (ev.clientY - r.top) * dpr;
+    const nx = (x - g.ox) / g.iw, ny = (y - g.oy) / g.ih;
+    if (A.step === "esq") {
+      if (kind === "down") {
+        const i = A.cal.pts.findIndex((p) => Math.hypot(g.ox + p[0] * g.iw - x, g.oy + p[1] * g.ih - y) < 26 * dpr);
+        if (i >= 0) A.drag = i;
+        else if (A.cal.pts.length < 4) { A.cal.pts.push([nx, ny]); A.drag = A.cal.pts.length - 1; }
+        try { cv.setPointerCapture(ev.pointerId); } catch (e) { /* nada */ }
+      } else if (kind === "move" && A.drag != null) A.cal.pts[A.drag] = [Math.max(-VMX, Math.min(1 + VMX, nx)), Math.max(-VMY, Math.min(1 + VMY, ny))];
+      else if (kind === "up") A.drag = null;
+      vaDraw(); vaButtons();
+    } else if (A.step === "col" && kind === "down") {
+      if (nx < 0 || ny < 0 || nx > 1 || ny > 1) return;
+      const sw = A.snap.width, sh = A.snap.height, data = A.snap.getContext("2d").getImageData(0, 0, sw, sh).data;
+      const col = Vision.muestra(data, sw, sh, nx * sw, ny * sh, 3);
+      A.cal[A.colFor] = col; A.cal[A.colFor + "P"] = [nx, ny];
+      if (A.colFor === "nos" && !A.cal.riv) A.colFor = "riv";
+      vaRender();
+    }
+  }
+  function vaButtons() {
+    const A = UI.va, b = $("#vanext");
+    if (b && A.step === "esq") b.disabled = A.cal.pts.length < 4;
+  }
+  function vaSnap() {
+    const v = $("#vid"), A = UI.va;
+    if (!v || v.readyState < 2 || !v.videoWidth) return false;
+    const w = Math.min(960, v.videoWidth), h = Math.round(w * v.videoHeight / v.videoWidth);
+    const c = document.createElement("canvas"); c.width = w; c.height = h;
+    c.getContext("2d", { willReadFrequently: true }).drawImage(v, 0, 0, w, h);
+    A.snap = c; A.vw = v.videoWidth; A.vh = v.videoHeight;
+    return true;
+  }
+  function vaRender() {
+    let box = $("#vax");
+    if (!box) { box = document.createElement("div"); box.id = "vax"; document.body.appendChild(box); }
+    const A = UI.va;
+    document.body.classList.toggle("lock", !!A || !!UI.sheet || !!UI.live);
+    if (!A) { box.innerHTML = ""; return; }
+    if (A.step === "run") return;
+    const n = { esq: 1, col: 2, dir: 3 }[A.step];
+    const top = `<div class="lv-top"><button class="iconbtn" data-a="vaClose" aria-label="Cerrar">${ic("close")}</button><span>Analizar vídeo · paso ${n} de 3</span></div>`;
+    let body = "";
+    if (A.step === "esq") body = `<h2>Marca el campo</h2><p>Toca las <b>4 esquinas</b> en este orden: <b>1</b> lejana izquierda, <b>2</b> lejana derecha, <b>3</b> cercana derecha y <b>4</b> cercana izquierda. Si una esquina queda fuera de la imagen, tócala en la zona gris donde estaría. Puedes arrastrar los puntos.</p>
+      <div class="vacv"><canvas id="vacv" aria-label="Imagen del campo para marcar las esquinas"></canvas></div>
+      <p class="muted">La línea discontinua debe caer sobre la línea del medio campo. Si no, ajusta los puntos.</p>
+      <div class="row"><button class="btn" data-a="vaFrame">Otra imagen</button><button class="btn" data-a="vaReset">Borrar puntos</button></div>
+      <button class="btn primary big" id="vanext" data-a="vaStep" data-v="col"${A.cal.pts.length < 4 ? " disabled" : ""}>Siguiente</button>`;
+    else if (A.step === "col") body = `<h2>Colores de las camisetas</h2><p>Toca la camiseta de un jugador de <b>${A.colFor === "nos" ? "tu equipo" : "el rival"}</b>. Mejor uno cercano y bien visible.</p>
+      <div class="chips"><button class="chip${A.colFor === "nos" ? " on" : ""}" data-a="vaCol" data-v="nos">${A.cal.nos ? `<span class="sw" style="background:rgb(${A.cal.nos.join(",")})"></span>` : ""}Tu equipo</button><button class="chip${A.colFor === "riv" ? " on" : ""}" data-a="vaCol" data-v="riv">${A.cal.riv ? `<span class="sw" style="background:rgb(${A.cal.riv.join(",")})"></span>` : ""}Rival</button></div>
+      <div class="vacv"><canvas id="vacv" aria-label="Imagen del campo para tocar las camisetas"></canvas></div>
+      <div class="row"><button class="btn" data-a="vaStep" data-v="esq">Volver</button><button class="btn" data-a="vaFrame">Otra imagen</button></div>
+      <button class="btn primary big" data-a="vaStep" data-v="dir"${A.cal.nos && A.cal.riv ? "" : " disabled"}>Siguiente</button>`;
+    else if (A.step === "dir") {
+      const v = vivo(curM()), ini = curM().video.ini || {};
+      body = `<h2>¿Hacia dónde atacáis?</h2><p>En la <b>1ª parte</b>, tu equipo ataca hacia la portería de la…</p>
+        <div class="chips"><button class="chip${A.cal.dir === -1 ? " on" : ""}" data-a="vaDir" data-v="-1">← Izquierda</button><button class="chip${A.cal.dir === 1 ? " on" : ""}" data-a="vaDir" data-v="1">Derecha →</button></div>
+        <label class="check"><input type="checkbox" data-vacambio="1"${A.cal.cambio !== false ? " checked" : ""}> Cambiáis de campo en el descanso (después de la parte ${Math.ceil(v.P / 2)})</label>
+        ${Object.keys(ini).length ? `<p class="muted">Se analizan las ${Object.keys(ini).length} partes que has marcado.</p>` : `<p class="note">Todavía no has marcado el inicio de cada parte: se analizará el vídeo entero y después Míster te propondrá dónde empieza cada parte.</p>`}
+        <ul class="pts"><li>Deja la app abierta y la pantalla encendida mientras analiza.</li><li>El vídeo se reproduce rápido y sin sonido.</li></ul>
+        <div class="row"><button class="btn" data-a="vaStep" data-v="col">Volver</button></div>
+        <button class="btn primary big" data-a="vaGo">${ic("play")} Analizar ahora</button>`;
+    }
+    box.innerHTML = `<div class="lv vax" role="dialog" aria-label="Analizar vídeo">${top}${body}</div>`;
+    const cv = $("#vacv");
+    if (cv) {
+      cv.addEventListener("pointerdown", (e) => { e.preventDefault(); vaPointer(e, "down"); });
+      cv.addEventListener("pointermove", (e) => vaPointer(e, "move"));
+      cv.addEventListener("pointerup", (e) => vaPointer(e, "up"));
+      cv.addEventListener("pointercancel", (e) => vaPointer(e, "up"));
+      requestAnimationFrame(vaDraw);
+    }
+  }
+  /* Tramos del vídeo a analizar: las partes marcadas o el vídeo entero */
+  function vaSegs(m, dur) {
+    const v = vivo(m), ini = m.video.ini || {}, ks = Object.keys(ini).map(Number).filter((p) => p <= v.P).sort((a, b) => a - b);
+    if (!ks.length) return [[0, dur]];
+    const segs = ks.map((p) => [Math.max(0, ini[p] - 20), Math.min(dur, ini[p] + v.M * 60 + 60)]).sort((a, b) => a[0] - b[0]);
+    const out = [];
+    segs.forEach((s) => { const l = out[out.length - 1]; if (l && s[0] <= l[1]) l[1] = Math.max(l[1], s[1]); else out.push(s.slice()); });
+    return out;
+  }
+  const once = (el, evn, ms) => new Promise((res) => { let done = false; const f = () => { if (done) return; done = true; el.removeEventListener(evn, f); res(true); }; el.addEventListener(evn, f); if (ms) setTimeout(() => { if (!done) { done = true; el.removeEventListener(evn, f); res(false); } }, ms); });
+  const dormir = (ms) => new Promise((r) => setTimeout(r, ms));
+  async function vaSeek(v, t) { const p = once(v, "seeked", 6000); v.currentTime = t; await p; }
+  /* Empieza dentro del toque (iPhone solo deja reproducir con sonido así) */
+  function vaStart() {
+    const A = UI.va, m = curM(); if (!A || !m || !UI.vid) return;
+    m.video.cal = { pts: A.cal.pts, nos: A.cal.nos, riv: A.cal.riv, nosP: A.cal.nosP, rivP: A.cal.rivP, dir: A.cal.dir, cambio: A.cal.cambio !== false };
+    save();
+    const mv = $("#vid"); if (mv) mv.pause();
+    A.step = "run"; A.cancel = false;
+    const box = $("#vax");
+    box.innerHTML = `<div class="lv vax" role="dialog" aria-label="Analizando el vídeo"><div class="lv-top"><span>Analizando el vídeo</span></div>
+      <h2>Analizando…</h2><div class="vaprev"><video id="vavid" playsinline preload="auto"></video><canvas id="vaov"></canvas></div>
+      <div class="lv-bar"><i id="vabar" style="width:0%"></i></div><p id="vatxt" class="lv-rest">Preparando…</p>
+      <p class="muted" style="color:rgba(255,255,255,.7)">Deja la app abierta y la pantalla encendida. Los puntos naranjas son tu equipo y los azules el rival.</p>
+      <button class="btn big" data-a="vaCancel">Cancelar</button></div>`;
+    const v = $("#vavid");
+    v.src = UI.vid.url;
+    let ac = null;
+    try { ac = new (window.AudioContext || window.webkitAudioContext)(); ac.resume().catch(() => {}); } catch (e) { ac = null; }
+    v.play().then(() => v.pause()).catch(() => {});
+    keepOn(true);
+    vaRun(m, v, ac).catch((e) => { toast("No se ha podido analizar: " + (e && e.message ? e.message : e)); }).finally(() => {
+      keepOn(false);
+      try { v.pause(); v.removeAttribute("src"); v.load(); } catch (e) { /* nada */ }
+      try { if (ac) ac.close(); } catch (e) { /* nada */ }
+      UI.va = null; vaRender(); render();
+    });
+  }
+  async function vaRun(m, v, ac) {
+    const A = UI.va, txt = (s) => { const e = $("#vatxt"); if (e) e.textContent = s; };
+    if (!(v.readyState >= 1)) await once(v, "loadedmetadata", 15000);
+    if (!v.videoWidth) throw new Error("el vídeo no se puede leer");
+    const dur = v.duration, W = 480, H = Math.round((W * v.videoHeight) / v.videoWidth), md = medidas();
+    const cal = m.video.cal;
+    const campo = new Vision.Campo({ W, H, pts: cal.pts.map((p) => [p[0] * W, p[1] * H]), nos: cal.nos, riv: cal.riv, largo: md[0], ancho: md[1] });
+    const cv = document.createElement("canvas"); cv.width = W; cv.height = H;
+    const cx = cv.getContext("2d", { willReadFrequently: true });
+    const ov = $("#vaov"); if (ov) { ov.width = W; ov.height = H; }
+    const oc = ov ? ov.getContext("2d") : null;
+    const segs = vaSegs(m, dur), total = segs.reduce((a, s) => a + s[1] - s[0], 0);
+    /* 1. Campo vacío: mediana de 15 imágenes repartidas por el partido */
+    const frames = [];
+    for (let k = 0; k < 15 && !A.cancel; k++) {
+      let q = ((k + 0.5) / 15) * total, t = segs[0][0];
+      for (const s of segs) { if (q <= s[1] - s[0]) { t = s[0] + q; break; } q -= s[1] - s[0]; }
+      txt("Preparando el campo vacío… " + (k + 1) + "/15");
+      await vaSeek(v, t);
+      cx.drawImage(v, 0, 0, W, H); frames.push(cx.getImageData(0, 0, W, H).data);
+    }
+    if (A.cancel) return;
+    campo.fondo(frames);
+    /* 2. Sonido */
+    let an = null, td = null, fd = null, hz = 0;
+    if (ac) {
+      try {
+        const src = ac.createMediaElementSource(v), g = ac.createGain();
+        an = ac.createAnalyser(); an.fftSize = 2048; an.smoothingTimeConstant = 0; g.gain.value = 0;
+        src.connect(an); an.connect(g); g.connect(ac.destination);
+        td = new Float32Array(an.fftSize); fd = new Float32Array(an.frequencyBinCount); hz = ac.sampleRate / an.fftSize;
+        await ac.resume();
+      } catch (e) { an = null; }
+    }
+    const bins = {}, oir = (t) => {
+      an.getFloatTimeDomainData(td);
+      let s = 0; for (let i = 0; i < td.length; i++) s += td[i] * td[i];
+      const db = 10 * Math.log10(s / td.length + 1e-12);
+      an.getFloatFrequencyData(fd);
+      const fv = (i) => (isFinite(fd[i]) ? fd[i] : -200);
+      let mx = -200; for (let i = Math.floor(2000 / hz); i <= Math.ceil(4500 / hz); i++) mx = Math.max(mx, fv(i));
+      const ref = []; for (let j = Math.floor(300 / hz); j <= Math.ceil(8000 / hz); j += 2) ref.push(fv(j));
+      ref.sort((a, b) => a - b);
+      const k = Math.floor(t * 2) / 2, b = bins[k] || (bins[k] = { t: k, db: -120, wh: 0, wl: -200 });
+      b.db = Math.max(b.db, db); b.wh = Math.max(b.wh, mx - ref[ref.length >> 1]); b.wl = Math.max(b.wl, mx);
+    };
+    /* 3. Pasada rápida por el vídeo */
+    const samples = [];
+    let hecho = 0;
+    for (const s of segs) {
+      if (A.cancel) break;
+      await vaSeek(v, s[0]);
+      v.playbackRate = 4;
+      try { await v.play(); } catch (e) { v.muted = true; await v.play(); }
+      let next = s[0], last = v.currentTime, quieto = 0;
+      while (!A.cancel && !v.ended && v.currentTime < s[1]) {
+        await dormir(40);
+        const t = v.currentTime;
+        if (an && !v.paused) oir(t);
+        if (t >= next) {
+          next = Math.floor(t) + 1;
+          cx.drawImage(v, 0, 0, W, H);
+          const r = campo.frame(cx.getImageData(0, 0, W, H).data);
+          samples.push({ t: Math.round(t * 2) / 2, pts: r.pts, mov: r.movida });
+          if (oc) {
+            oc.clearRect(0, 0, W, H);
+            r.pts.forEach((p) => { const q = Vision.apply(campo.Hi, p[0], p[1]); oc.fillStyle = p[2] === 1 ? "#f0561b" : p[2] === 2 ? "#3b6fd8" : "#ddd"; oc.beginPath(); oc.arc(q[0], q[1], 4, 0, 7); oc.fill(); });
+          }
+        }
+        if (Math.abs(t - last) < 0.01) { if (++quieto > 150) { v.play().catch(() => {}); if (quieto > 400) break; } } else { quieto = 0; last = t; }
+        if (v.paused && !v.ended) v.play().catch(() => {});
+        const pc = Math.min(100, ((hecho + Math.max(0, t - s[0])) / total) * 100);
+        const bar = $("#vabar"); if (bar) bar.style.width = pc.toFixed(1) + "%";
+        txt(hms(t) + " de " + hms(segs[segs.length - 1][1]) + " · " + Math.round(pc) + "%");
+      }
+      v.pause();
+      hecho += s[1] - s[0];
+    }
+    if (A.cancel) { toast("Análisis cancelado"); return; }
+    /* 4. Guardar */
+    const aud = an ? Vision.audioEventos(Object.keys(bins).map((k) => bins[k]).sort((a, b) => a.t - b.t)) : { ruido: [], silbato: [], ok: false };
+    let data = JSON.stringify({ s: Vision.codificar(samples), a: aud });
+    try { localStorage.setItem(VAK(m), data); }
+    catch (e) { data = JSON.stringify({ s: Vision.codificar(samples.filter((x, i) => i % 2 === 0)), a: aud }); localStorage.setItem(VAK(m), data); }
+    m.video.auto = { ts: Date.now(), n: samples.length, audio: aud.ok, dur: Math.round(total) };
+    m.video.hecho = [];
+    save();
+    toast("Análisis terminado");
+  }
+
   /* ---------- hojas (modales) ---------- */
   function libCtx() {
     const a = avail(), t = S.team;
@@ -2670,7 +3494,7 @@ var FCF = (function () {
   }
   function renderSheet() {
     const box = $("#sheet"), sh = UI.sheet;
-    document.body.classList.toggle("lock", !!sh || !!UI.live);
+    document.body.classList.toggle("lock", !!sh || !!UI.live || !!UI.va);
     if (!sh) { box.innerHTML = ""; return; }
     let title = "", body = "";
     if (sh.t === "ex") {
@@ -2749,23 +3573,99 @@ var FCF = (function () {
     } catch (e) { /* sin audio */ }
   }
   function buzz(ms) { try { if (NATIVE && NATIVE.vibrate) NATIVE.vibrate(ms); else if (navigator.vibrate) navigator.vibrate(ms); } catch (e) { /* sin vibración */ } }
-  function liveSteps(s) {
-    const steps = [];
+  /* ---------- MODO ENTRENAMIENTO: temporizador con voz ----------
+     El tiempo se calcula con la hora real, así que si el móvil se bloquea y vuelves, el reloj sigue cuadrando.
+     En Android los avisos (pitidos, vibración y voz) los da un servicio nativo y suenan aunque la pantalla esté apagada. */
+  const TRANS = [[0, "Esperar"], [1, "1'"], [2, "2'"], [3, "3'"], [5, "5'"]];
+  const transMin = () => (S.team.trans == null ? 2 : S.team.trans);
+  const vozOn = () => S.team.voz !== false;
+  function liveSteps(s, trans) {
+    const steps = []; let first = true;
     s.tareas.forEach((t, ti) => {
       if (t.b === "por" || t.b === "comp") return;
       const d = Engine.detalle(t, s);
-      if (d.cg.cont || d.cg.ser <= 1) steps.push({ ti, ph: "work", sec: Math.round(t.min * 60), ser: 1, of: 1 });
+      if (!first && trans > 0) steps.push({ ti, ph: "trans", sec: trans * 60, ser: 0, of: 0 });
+      const gate = first || trans === 0;
+      if (d.cg.cont || d.cg.ser <= 1) steps.push({ ti, ph: "work", sec: Math.max(30, Math.round(t.min * 60)), ser: 1, of: 1, gate });
       else for (let i = 0; i < d.cg.ser; i++) {
-        steps.push({ ti, ph: "work", sec: Math.round(d.cg.w * 60), ser: i + 1, of: d.cg.ser });
-        if (i < d.cg.ser - 1) steps.push({ ti, ph: "rest", sec: Math.round(d.cg.r * 60), ser: i + 1, of: d.cg.ser });
+        steps.push({ ti, ph: "work", sec: Math.max(20, Math.round(d.cg.w * 60)), ser: i + 1, of: d.cg.ser, gate: gate && i === 0 });
+        if (i < d.cg.ser - 1 && d.cg.r > 0) steps.push({ ti, ph: "rest", sec: Math.round(d.cg.r * 60), ser: i + 1, of: d.cg.ser });
       }
+      first = false;
     });
     return steps;
   }
+  const leftMs = (L, now) => L.steps[L.i].sec * 1000 - (L.acc + (L.run ? now - L.since : 0));
+  const isWait = (L) => !L.run && !L.done && L.acc === 0 && !!L.steps[L.i].gate;
+  const tName = (L, ti) => Engine.ex(L.s.tareas[ti].ex).n;
+  const hablar = (n) => String(n).replace(/(\d+)\s*[vx]\s*(\d+)/gi, "$1 contra $2").replace(/11\+/g, "once plus").replace(/\+/g, " más ").replace(/×/g, " por ").replace(/[()«»"]/g, "").replace(/\s+/g, " ").trim();
+  function durTxt(sec) {
+    const m = Math.floor(sec / 60), s = sec % 60, p = [];
+    if (m) p.push(m === 1 ? "un minuto" : m + " minutos");
+    if (s) p.push(s + " segundos");
+    return p.join(" y ") || "0 segundos";
+  }
+  function stepTxt(L, j) {
+    const st = L.steps[j];
+    if (st.ph === "trans") return "Fin del ejercicio. Siguiente: " + hablar(tName(L, st.ti)) + ". Tenéis " + durTxt(st.sec) + " para beber agua y montarlo.";
+    if (st.ph === "rest") return "Descanso. " + durTxt(st.sec) + ".";
+    if (st.ser === 1) return "Empieza " + hablar(tName(L, st.ti)) + ". " + (st.of > 1 ? st.of + " series de " + durTxt(st.sec) : durTxt(st.sec)) + ".";
+    return "Serie " + st.ser + " de " + st.of + (st.ser === st.of ? ", la última" : "") + ". ¡Vamos!";
+  }
+  function stepNote(L, j) {
+    const st = L.steps[j], n = tName(L, st.ti);
+    return st.ph === "trans" ? "Cambio · siguiente: " + n : st.ph === "rest" ? "Descanso · " + n : n + (st.of > 1 ? " · serie " + st.ser + " de " + st.of : "");
+  }
+  function warns(A, st, tEnd, now) {
+    if (st.ph === "work" && st.sec >= 120 && tEnd - 30000 > now) A.push({ at: tEnd - 30000, beep: "tick", say: "Quedan 30 segundos." });
+    if (st.ph === "trans" && st.sec >= 45 && tEnd - 15000 > now) A.push({ at: tEnd - 15000, beep: "tick", say: "Preparados. Empezamos en 15 segundos." });
+    [3000, 2000, 1000].forEach((d) => { if (tEnd - d > now) A.push({ at: tEnd - d, beep: "tick" }); });
+  }
+  /* Todos los avisos que quedan hasta la próxima vez que haya que pulsar «Empezar» */
+  function liveAlerts(L, now) {
+    const A = [];
+    if (!L.run) return A;
+    if (L.announce) { A.push({ at: now, beep: "go", say: stepTxt(L, L.i), vib: 300, note: stepNote(L, L.i) }); L.announce = false; }
+    let t = now + leftMs(L, now);
+    warns(A, L.steps[L.i], t, now);
+    for (let j = L.i + 1; j <= L.steps.length; j++) {
+      if (j === L.steps.length) { A.push({ at: t, beep: "fin", say: "Fin del entrenamiento. ¡Buen trabajo! Pregunta al grupo cómo de duro ha sido, del 1 al 10.", vib: 900, note: "Entrenamiento terminado" }); break; }
+      const st = L.steps[j];
+      if (st.gate) { A.push({ at: t, beep: "end", say: "Fin del ejercicio. Siguiente: " + hablar(tName(L, st.ti)) + ". Pulsa empezar cuando estéis listos.", vib: 700, note: "Esperando · siguiente: " + tName(L, st.ti) }); break; }
+      A.push({ at: t, beep: st.ph === "work" ? "go" : "end", say: stepTxt(L, j), vib: st.ph === "work" ? 500 : 400, note: stepNote(L, j) });
+      t += st.sec * 1000;
+      warns(A, st, t, now);
+    }
+    if (!vozOn()) A.forEach((a) => { delete a.say; });
+    return A.sort((a, b) => a.at - b.at);
+  }
+  function hablarJS(txt) {
+    try { if (!window.speechSynthesis || !txt) return; const u = new SpeechSynthesisUtterance(txt); u.lang = "es-ES"; u.rate = 1.02; window.speechSynthesis.speak(u); } catch (e) { /* sin voz */ }
+  }
+  function sonar(a) {
+    if (a.beep === "tick") beep(660, 0.12);
+    else if (a.beep === "go") beep(990, 0.45);
+    else if (a.beep === "end") { beep(990, 0.22); setTimeout(() => beep(990, 0.22), 300); }
+    else if (a.beep === "fin") { beep(880, 0.4); setTimeout(() => beep(880, 0.6), 500); }
+    if (a.vib) buzz(a.vib);
+    if (a.say) setTimeout(() => hablarJS(a.say), a.beep ? 450 : 0);
+  }
+  /* Manda el plan al servicio nativo; si no lo hay (iPhone, navegador), los avisos los da la propia web */
+  function livePlan() {
+    const L = UI.live; if (!L) return;
+    const now = Date.now(), A = liveAlerts(L, now);
+    L.native = false;
+    if (NATIVE && NATIVE.timerPlan) {
+      try { L.native = NATIVE.timerPlan(JSON.stringify({ title: "Entrenamiento · " + (L.s.titulo || Engine.titulo(L.s)), note: L.run ? stepNote(L, L.i) : L.done ? "Entrenamiento terminado" : "En pausa", alerts: A })) !== false; } catch (e) { L.native = false; }
+    }
+    L.alerts = L.native ? [] : A;
+    /* Lo que toca ya suena dentro del propio toque (iPhone solo deja hablar tras un toque) */
+    if (!L.native) { L.alerts.filter((a) => a.at <= now).forEach(sonar); L.alerts = L.alerts.filter((a) => a.at > now); }
+  }
   function liveStart(s) {
-    const steps = liveSteps(s);
+    const trans = transMin(), steps = liveSteps(s, trans);
     if (!steps.length) { toast("La sesión no tiene tareas"); return; }
-    UI.live = { s, steps, i: 0, left: steps[0].sec * 1000, run: false, wait: true, last: 0, done: false };
+    UI.live = { s, steps, trans, i: 0, acc: 0, since: 0, run: false, done: false, alerts: [] };
     try { if (NATIVE && NATIVE.keepScreenOn) NATIVE.keepScreenOn(true); } catch (e) { /* nada */ }
     try { if (navigator.wakeLock) navigator.wakeLock.request("screen").then((w) => { wake = w; }).catch(() => {}); } catch (e) { /* nada */ }
     clearInterval(tick); tick = setInterval(liveTick, 250);
@@ -2773,40 +3673,58 @@ var FCF = (function () {
   }
   function liveClose() {
     clearInterval(tick); tick = null; UI.live = null;
+    try { if (NATIVE && NATIVE.timerStop) NATIVE.timerStop(); } catch (e) { /* nada */ }
+    try { if (window.speechSynthesis) window.speechSynthesis.cancel(); } catch (e) { /* nada */ }
     try { if (NATIVE && NATIVE.keepScreenOn) NATIVE.keepScreenOn(false); } catch (e) { /* nada */ }
     try { if (wake) wake.release(); } catch (e) { /* nada */ } wake = null;
     $("#live").innerHTML = ""; renderSheet();
   }
   const mmss = (ms) => { const t = Math.max(0, Math.ceil(ms / 1000)); return String(Math.floor(t / 60)).padStart(2, "0") + ":" + String(t % 60).padStart(2, "0"); };
-  function liveGo(i, autoplay) {
-    const L = UI.live;
-    if (i >= L.steps.length) { L.done = true; L.run = false; beep(880, 0.5); buzz(600); renderLive(); return; }
+  /* Avanza los pasos que hayan terminado (aunque haya pasado mucho rato con la pantalla apagada) */
+  function liveAdvance(L, now) {
+    let left = leftMs(L, now), changed = false;
+    while (L.run && left <= 0) {
+      const over = -left, nx = L.i + 1;
+      changed = true;
+      if (nx >= L.steps.length) { L.done = true; L.run = false; break; }
+      L.i = nx;
+      if (L.steps[nx].gate) { L.run = false; L.acc = 0; break; }
+      L.acc = over; L.since = now; left = leftMs(L, now);
+    }
+    return changed;
+  }
+  function liveGo(i) {
+    const L = UI.live, now = Date.now();
+    if (i >= L.steps.length) { L.done = true; L.run = false; livePlan(); renderLive(); return; }
     if (i < 0) i = 0;
-    const newTask = L.steps[i].ti !== L.steps[L.i].ti || i === 0;
-    L.i = i; L.left = L.steps[i].sec * 1000; L.done = false;
-    if (newTask && !autoplay) { L.run = false; L.wait = true; } else { L.wait = false; }
-    renderLive();
+    L.i = i; L.acc = 0; L.done = false;
+    if (L.run) { L.since = now; L.announce = true; }
+    livePlan(); renderLive();
   }
   function liveTick() {
     const L = UI.live; if (!L || !L.run) return;
-    const now = Date.now(), prev = L.left;
-    L.left -= now - L.last; L.last = now;
-    const sPrev = Math.ceil(prev / 1000), sNow = Math.ceil(L.left / 1000);
-    if (sNow !== sPrev && sNow <= 3 && sNow > 0) beep(660, 0.12);
-    if (L.left <= 0) {
-      const nx = L.i + 1, st = L.steps[nx];
-      if (st && st.ti === L.steps[L.i].ti) { beep(st.ph === "work" ? 990 : 520, 0.45); buzz(400); liveGo(nx, true); }
-      else { beep(990, 0.25); setTimeout(() => beep(990, 0.25), 320); buzz(700); liveGo(nx, false); }
-      return;
+    const now = Date.now();
+    if (!L.native && L.alerts.length) {
+      const due = L.alerts.filter((a) => a.at <= now);
+      L.alerts = L.alerts.filter((a) => a.at > now);
+      due.filter((a) => now - a.at < 2500).forEach(sonar);
     }
-    const t = $("#lvt"), b = $("#lvb");
-    if (t) t.textContent = mmss(L.left);
-    if (b) b.style.width = (100 - (L.left / (L.steps[L.i].sec * 1000)) * 100) + "%";
+    if (liveAdvance(L, now)) { renderLive(); return; }
+    const t = $("#lvt"), b = $("#lvb"), r = $("#lvr"), left = leftMs(L, now);
+    if (t) t.textContent = mmss(left);
+    if (b) b.style.width = (100 - (left / (L.steps[L.i].sec * 1000)) * 100) + "%";
+    if (r) r.textContent = restoTxt(L, now);
+  }
+  function restoTxt(L, now) {
+    let ms = Math.max(0, leftMs(L, now));
+    for (let j = L.i + 1; j < L.steps.length; j++) ms += L.steps[j].sec * 1000;
+    const fin = new Date(now + ms);
+    return "Quedan " + Math.ceil(ms / 60000) + " min" + (L.run ? " · acaba a las " + String(fin.getHours()).padStart(2, "0") + ":" + String(fin.getMinutes()).padStart(2, "0") : "");
   }
   function renderLive() {
     const L = UI.live, box = $("#live");
     if (!L) { box.innerHTML = ""; return; }
-    const s = L.s;
+    const s = L.s, now = Date.now();
     if (L.done) {
       box.innerHTML = `<div class="lv" role="dialog" aria-label="Entrenamiento terminado"><div class="lv-top"><button class="iconbtn" data-a="lvClose" aria-label="Cerrar">${ic("close")}</button><span>Entrenamiento</span></div>
         <h2 style="font-size:40px;margin-top:10vh">Sesión terminada</h2><p style="color:rgba(255,255,255,.8)">Pregunta al grupo cómo de dura ha sido (RPE del 1 al 10) y anótalo en el cierre de la sesión para controlar la carga.</p>
@@ -2817,19 +3735,24 @@ var FCF = (function () {
     const order = s.tareas.map((x, i) => [x, i]).filter((x) => x[0].b !== "por" && x[0].b !== "comp");
     const pos = order.findIndex((x) => x[1] === st.ti);
     const nextT = order[pos + 1];
-    const ph = L.wait ? ["wait", "Preparar tarea"] : st.ph === "rest" ? ["rest", "Descanso"] : ["work", "Trabajo"];
+    const wait = isWait(L), left = leftMs(L, now);
+    const ph = wait ? ["wait", "Preparar tarea"] : st.ph === "rest" ? ["rest", "Descanso"] : st.ph === "trans" ? ["trans", "Cambio · agua y montaje"] : ["work", "Trabajo"];
+    const playTxt = L.run ? ic("pause") + " Pausa" : ic("play") + (wait ? " Empezar" : " Seguir");
     box.innerHTML = `<div class="lv" role="dialog" aria-label="Modo entrenamiento">
-      <div class="lv-top"><button class="iconbtn" data-a="lvAskClose" aria-label="Salir del entrenamiento">${ic("close")}</button><span>Tarea ${pos + 1} de ${order.length} · ${BLOQ[t.b]}</span></div>
-      <h2>${esc(d.e.n)}</h2>
+      <div class="lv-top"><button class="iconbtn" data-a="lvAskClose" aria-label="Salir del entrenamiento">${ic("close")}</button><span>Tarea ${pos + 1} de ${order.length} · ${BLOQ[t.b]}</span><button class="iconbtn" data-a="lvVoz" aria-label="${vozOn() ? "Silenciar la voz" : "Activar la voz"}" aria-pressed="${vozOn()}">${vozOn() ? "🔊" : "🔈"}</button></div>
+      ${st.ph === "trans" ? `<p class="lv-sub">Siguiente tarea</p>` : ""}<h2>${esc(d.e.n)}</h2>
       <span class="lv-ph ${ph[0]}">${ph[1]}${st.of > 1 ? ` · serie ${st.ser} de ${st.of}` : ""}</span>
-      <div class="lv-time" id="lvt" aria-live="off">${mmss(L.left)}</div>
-      <div class="lv-bar"><i id="lvb" style="width:${100 - (L.left / (st.sec * 1000)) * 100}%"></i></div>
-      <div class="lv-ctrl"><button data-a="lvPrev" aria-label="Paso anterior">${ic("skipP")}</button><button class="play" data-a="lvPlay">${L.run ? ic("pause") + " Pausa" : ic("play") + (L.wait ? " Empezar" : " Seguir")}</button><button data-a="lvNext" aria-label="Paso siguiente">${ic("skipN")}</button></div>
+      <div class="lv-time" id="lvt" aria-live="off">${mmss(left)}</div>
+      <div class="lv-bar"><i id="lvb" style="width:${100 - (left / (st.sec * 1000)) * 100}%"></i></div>
+      <p class="lv-rest" id="lvr">${restoTxt(L, now)}</p>
+      <div class="lv-ctrl"><button data-a="lvPrev" aria-label="Paso anterior">${ic("skipP")}</button><button class="play" data-a="lvPlay">${playTxt}</button><button data-a="lvNext" aria-label="${st.ph === "trans" ? "Empezar ya la siguiente tarea" : "Paso siguiente"}">${st.ph === "trans" ? "Ya" : ic("skipN")}</button></div>
       ${Pitch.render(d.e.g, d.e.n)}
       <p style="color:rgba(255,255,255,.75);font-size:14px">${esc(d.og.txt)} · ${esc(d.sp.txt)}</p>
       ${d.regla ? `<p style="font-size:15px"><b style="color:#ff9a6b">Regla del día:</b> ${esc(d.regla)}</p>` : ""}
       <ul class="pts">${(s.met === "eco" || s.met === "tgfu" ? d.e.pre : d.e.con).map((x) => `<li>${esc(x)}</li>`).join("")}</ul>
-      <div class="lv-next">${nextT ? "Siguiente: " + esc(Engine.ex(nextT[0].ex).n) + " · " + nextT[0].min + "'" : "Última tarea de la sesión"}</div></div>`;
+      <div class="lv-next">${nextT ? "Después: " + esc(Engine.ex(nextT[0].ex).n) + " · " + nextT[0].min + "'" : "Última tarea de la sesión"}</div>
+      <div class="lv-opt"><span>Al acabar cada tarea</span><div class="chips">${TRANS.map((x) => `<button class="chip${L.trans === x[0] ? " on" : ""}" data-a="lvTrans" data-v="${x[0]}">${x[0] ? "Cambio " + x[1] + " y empieza sola" : "Esperar a que pulse"}</button>`).join("")}</div>
+        <p>${L.native ? "Los avisos suenan aunque bloquees el móvil. Sube el volumen multimedia." : IOS ? "Deja la app abierta con la pantalla encendida: iPhone no deja avisar con la app cerrada." : "Deja la pantalla encendida para oír los avisos."}</p></div></div>`;
   }
 
   /* ---------- acciones ---------- */
@@ -2920,7 +3843,7 @@ var FCF = (function () {
         finalizar(m); keepOn(false); UI.sheet = null; render(); window.scrollTo(0, 0); toast("Partido terminado"); return;
       }
       if (d.v === "lfin") { const m = curM(); finalizar(m); keepOn(false); UI.sheet = null; UI.page = { t: "match", id: m.id }; render(); window.scrollTo(0, 0); toast("Partido terminado: revisa el análisis"); return; }
-      if (d.v === "delM") { const m = curM(); S.partidos = S.partidos.filter((x) => x !== m); if (m && m.fcf && S.fcf) { S.fcf.ign = (S.fcf.ign || []).concat(m.fcf); } save(); UI.page = null; toast("Partido borrado"); }
+      if (d.v === "delM") { const m = curM(); S.partidos = S.partidos.filter((x) => x !== m); if (m && m.fcf && S.fcf) { S.fcf.ign = (S.fcf.ign || []).concat(m.fcf); } try { localStorage.removeItem(VAK(m)); } catch (e) { /* nada */ } save(); UI.page = null; toast("Partido borrado"); }
       if (d.v === "delS") { const s = cur(); S.sessions = S.sessions.filter((x) => x.id !== s.id); save(); UI.page = null; toast("Sesión borrada"); }
       if (d.v === "clearEj") { S.players = S.players.filter((p) => !p.ej); S.sessions = S.sessions.filter((s) => !s.ejemplo); S.partidos = S.partidos.filter((m) => !m.ejemplo); S.ejemplo = false; save(); UI.form = null; toast("Listo: empieza con tu equipo"); }
       if (d.v === "clearPl") { S.players = []; save(); UI.form = null; }
@@ -2992,13 +3915,48 @@ var FCF = (function () {
     vini: (d) => { const m = curM(), v = $("#vid"); if (!v) return; m.video.ini[d.p] = Math.round(v.currentTime); save(); render(); toast("Parte " + d.p + " empieza en el " + hms(v.currentTime)); },
     vev: (d) => {
       const m = curM(), v = $("#vid"); if (!v) return;
-      const vt = Math.round(v.currentTime * 10) / 10, ps = partFromVt(m, vt);
-      const e = { id: "e" + Date.now().toString(36) + Math.floor(Math.random() * 99), p: ps.p, s: ps.s, vt, t: d.v };
-      m.ev.push(e);
-      if (d.v === "gol" || d.v === "gol_r") syncScore(m);
-      m.lectura = lecturaStats(m); m.lectura.forEach((o) => { if (m.fallos.indexOf(o.c) < 0) m.fallos.push(o.c); });
+      const vt = Math.round(v.currentTime * 10) / 10, e = addVidEv(m, d.v, vt);
       buzz(30); save(); render();
       if (EVM[d.v].j && S.players.length) openSheet({ t: "evj", id: e.id }); else toast(EVM[d.v].n + " · " + hms(vt));
+    },
+    vaOpen: () => {
+      const m = curM(); if (!m) return;
+      const c = m.video.cal || {};
+      UI.va = { step: "esq", colFor: "nos", cal: { pts: (c.pts || []).slice(), nos: c.nos, riv: c.riv, nosP: c.nosP, rivP: c.rivP, dir: c.dir || 1, cambio: c.cambio !== false } };
+      if (vaSnap()) { vaRender(); return; }
+      /* el vídeo aún no ha pintado ninguna imagen: saltar a un momento y esperar */
+      const v = $("#vid"); if (!v) { UI.va = null; return; }
+      toast("Cargando una imagen del vídeo…");
+      once(v, "seeked", 6000).then(() => setTimeout(() => { if (UI.va && vaSnap()) vaRender(); else { UI.va = null; toast("Pon el vídeo en un momento en que se vea bien el campo y vuelve a pulsar"); } }, 150));
+      v.currentTime = Math.max(v.currentTime, Math.min(30, (v.duration || 60) / 3));
+    },
+    vaClose: () => { UI.va = null; vaRender(); },
+    vaReset: () => { UI.va.cal.pts = []; vaRender(); },
+    vaFrame: () => {
+      const v = $("#vid"); if (!v) return;
+      const t = (v.currentTime + 37) % Math.max(1, v.duration || 1);
+      once(v, "seeked", 5000).then(() => { vaSnap(); vaDraw(); });
+      v.currentTime = t;
+    },
+    vaStep: (d) => { const A = UI.va; if (d.v === "col" && A.cal.pts.length < 4) return; if (d.v === "col" && Vision.homography(A.cal.pts, Vision.UNIT) == null) { toast("Esas esquinas no forman un campo: revísalas"); return; } A.step = d.v; if (d.v === "col") A.colFor = A.cal.nos && !A.cal.riv ? "riv" : "nos"; vaRender(); },
+    vaCol: (d) => { UI.va.colFor = d.v; vaRender(); },
+    vaDir: (d) => { UI.va.cal.dir = Number(d.v); vaRender(); },
+    vaGo: () => vaStart(),
+    vaCancel: () => { if (UI.va) UI.va.cancel = true; },
+    vaMap: (d) => { UI.vamap = d.v; const m = curM(), e = $("#vauto"); if (e && m) e.innerHTML = vaHtml(m); },
+    vaTag: (d) => {
+      const m = curM(); if (!m) return;
+      const e = addVidEv(m, d.v, Number(d.t));
+      m.video.hecho = (m.video.hecho || []).concat(d.k); save(); render();
+      if (EVM[d.v].j && S.players.length) openSheet({ t: "evj", id: e.id }); else toast(EVM[d.v].n + " · " + hms(Number(d.t)));
+    },
+    vaDis: (d) => { const m = curM(); m.video.hecho = (m.video.hecho || []).concat(d.k); save(); render(); },
+    vaIni: () => { const m = curM(), sg = vaSugIni(m); if (!sg) return; m.video.ini = {}; sg.forEach((t, i) => { m.video.ini[i + 1] = t; }); save(); render(); toast("Inicios de parte marcados: revisa el análisis"); },
+    vaFallos: () => {
+      const m = curM(), D = vaData(m); if (!D) return;
+      const cfg = vaCfg(m), lec = vaLectura(Vision.resumen(D.samples, cfg), cfg);
+      let n = 0; lec.forEach((o) => { if (o.c && m.fallos.indexOf(o.c) < 0) { m.fallos.push(o.c); n++; } });
+      save(); render(); toast(n ? n + " aspectos añadidos al análisis del partido" : "Ya estaban añadidos");
     },
     vgo: (d) => { const v = $("#vid"); if (!v) return; UI.vplist = null; v.currentTime = Math.max(0, Number(d.t) - (UI.vpre || 6)); v.play().catch(() => {}); window.scrollTo({ top: 0, behavior: "smooth" }); const b = $("#vplaybar"); if (b) b.innerHTML = ""; },
     vfil: (d) => { UI.vfil = d.v; render(); },
@@ -3082,9 +4040,27 @@ var FCF = (function () {
     tdia: (d) => { const l = S.team.dias, v = Number(d.v), i = l.indexOf(v); if (i >= 0) l.splice(i, 1); else l.push(v); l.sort(); save(); const y = window.scrollY; render(); window.scrollTo(0, y); },
     tfmt: (d) => { S.team.formato = d.v.split("x").map(Number); save(); const y = window.scrollY; render(); window.scrollTo(0, y); },
     tdp: (d) => { S.team.diaPartido = Number(d.v); save(); const y = window.scrollY; render(); window.scrollTo(0, y); },
-    lvPlay: () => { const L = UI.live; if (!L) return; L.run = !L.run; L.wait = false; L.last = Date.now(); if (L.run) beep(990, 0.18); renderLive(); },
-    lvNext: () => { const L = UI.live; if (L) { const was = L.run; liveGo(L.i + 1, was); if (was) { L.last = Date.now(); } } },
-    lvPrev: () => { const L = UI.live; if (L) { const was = L.run; liveGo(L.i - 1, was); if (was) L.last = Date.now(); } },
+    lvPlay: () => {
+      const L = UI.live; if (!L || L.done) return; const now = Date.now();
+      if (L.run) { L.acc += now - L.since; L.run = false; }
+      else { if (L.acc === 0) L.announce = true; L.since = now; L.run = true; }
+      livePlan(); renderLive();
+    },
+    lvNext: () => { const L = UI.live; if (L) liveGo(L.i + 1); },
+    lvPrev: () => { const L = UI.live; if (L) liveGo(L.acc > 0 || (L.run && Date.now() - L.since > 3000) ? L.i : L.i - 1); },
+    lvVoz: () => { S.team.voz = !vozOn(); save(); if (UI.live) { livePlan(); renderLive(); } toast(vozOn() ? "Voz activada" : "Voz desactivada: solo pitidos"); },
+    lvTrans: (d) => {
+      const L = UI.live; if (!L) return;
+      const v = Number(d.v), now = Date.now(), cur = L.steps[L.i];
+      S.team.trans = v; save();
+      if (L.run) { L.acc += now - L.since; L.since = now; }
+      const steps = liveSteps(L.s, v);
+      let i = steps.findIndex((x) => x.ti === cur.ti && x.ph === cur.ph && x.ser === cur.ser);
+      if (i < 0) { i = steps.findIndex((x) => x.ti === cur.ti && x.ph === "work"); L.acc = 0; }
+      L.steps = steps; L.trans = v; L.i = Math.max(0, i);
+      if (L.acc === 0 && steps[L.i].gate) L.run = false;
+      livePlan(); renderLive();
+    },
     lvAskClose: () => openSheet({ t: "ask", v: "liveExit" }),
     lvClose: () => { liveClose(); render(); },
     lvEnd: () => { const s = UI.live.s; liveClose(); if (findS(s.id)) { openSes(s.id); setTimeout(() => { const el = document.querySelector(".rpe"); if (el) el.scrollIntoView({ block: "center" }); }, 60); } else render(); }
@@ -3126,6 +4102,7 @@ var FCF = (function () {
       return;
     }
     if (ds.vj) { UI.vjug = el.value; render(); return; }
+    if (ds.vacambio && UI.va) { UI.va.cal.cambio = el.checked; return; }
     if (ds.f) { UI.form[ds.f] = el.value; }
     else if (ds.tf && ds.tf !== "modelo" && ds.tf !== "nombre") {
       S.team[ds.tf] = ds.tf === "cat" ? Number(el.value) : el.value; save(); UI.form = null; render();
@@ -3149,6 +4126,7 @@ var FCF = (function () {
 
   /* Botón atrás de Android */
   window.appBack = function () {
+    if (UI.va) { if (UI.va.step === "run") UI.va.cancel = true; else { UI.va = null; vaRender(); } return true; }
     if (UI.sheet) { closeSheet(); return true; }
     if (UI.live) { openSheet({ t: "ask", v: "liveExit" }); return true; }
     if (UI.page) { ACT.back(); return true; }
