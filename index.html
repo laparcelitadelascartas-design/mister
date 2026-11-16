@@ -466,6 +466,31 @@ svg.heat { display: block; width: 100%; height: auto; border-radius: 10px; color
 .diver button i { font-style: normal; font-weight: 800; font-size: 15px; font-variant-numeric: tabular-nums; }
 .diver button:active { transform: scale(.96); }
 
+/* Ficha del jugador */
+.player .pn.link { text-align: left; color: var(--ink); font-size: 16px; padding: 6px 0; text-decoration: underline; text-decoration-color: var(--line); text-underline-offset: 4px; }
+.card.jhead { flex-direction: row; align-items: center; gap: 14px; }
+.jhead h2 { margin: 0; font-size: 26px; }
+.dorsal.xl { width: 58px; height: 58px; font-size: 28px; background: var(--pitch); color: #fff; }
+.eva { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.eva:last-of-type { border-bottom: 0; }
+.eva-t { min-width: 0; }
+.eva-t b { display: block; font-size: 15px; }
+.eva-t small { color: var(--muted); font-size: 12.5px; line-height: 1.3; display: block; }
+.stars { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; flex: none; max-width: 165px; }
+.stars .st { border: 0; background: none; font-size: 26px; line-height: 1; padding: 4px 0; min-width: 33px; min-height: 40px; color: var(--line); }
+.stars .st.on { color: #e9ad00; }
+.stars small { width: 100%; text-align: right; font-size: 12px; color: var(--muted); }
+table.evo { width: 100%; border-collapse: collapse; font-size: 14px; }
+table.evo th, table.evo td { padding: 7px 4px; border-bottom: 1px solid var(--line); text-align: center; }
+table.evo td:first-child, table.evo th:first-child { text-align: left; }
+table.evo i { font-style: normal; font-size: 11px; }
+table.evo i.up { color: var(--i1); }
+table.evo i.dn { color: var(--i5); }
+.infimg { width: 100%; max-height: 52vh; object-fit: contain; border-radius: 12px; border: 1px solid var(--line); background: var(--surface-2); min-height: 120px; }
+.tag.ok { background: color-mix(in srgb, var(--i1) 16%, var(--surface)); border-color: transparent; color: var(--i1); }
+.tag.warn { background: var(--warn-bg); border-color: transparent; color: var(--warn-ink); }
+.item.plan.now { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset; }
+
 </style>
 </head>
 <body>
@@ -2543,7 +2568,7 @@ var Vision = (function () {
   if (!S.partidos) S.partidos = [];
   if (S.fcf === undefined) S.fcf = null;
   if (!S.team.dias) { S.team.dias = [1, 3, 4]; S.team.diaPartido = 5; }
-  function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { /* sin almacenamiento */ } if (typeof copiaAuto === "function") copiaAuto(); }
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { /* sin almacenamiento */ } if (typeof copiaAuto === "function") copiaAuto(); if (typeof avisosSync === "function") avisosSync(); }
   save();
 
   const UI = { tab: "inicio", page: null, form: null, draft: null, sheet: null, live: null, lib: { seg: "ej", q: "", cat: "all", cont: "all", b: "all" }, wk: 0 };
@@ -2558,6 +2583,13 @@ var Vision = (function () {
     const t = S.team, a = avail();
     const f = { fecha: fecha || today(), cat: t.cat, nivel: t.nivel, met: t.met, tipo: "tac", cont: [], md: "none", dur: Math.min(90, CATS[t.cat].maxDur), N: a.N || 14, gk: Math.min(a.gk, 3), esp: t.esp, mat: t.mat.slice() };
     f.cont = Engine.contentsFor(f.cat, f.tipo).slice(0, 1);
+    /* Contenido del plan de temporada para ese mes */
+    let pm = [];
+    try { pm = planMes(f.fecha); } catch (e) { pm = []; }
+    if (pm.length) {
+      const tp = Analisis.tipoPara(pm.slice(0, 2)), ok = Engine.contentsFor(f.cat, tp), c = pm.filter((x) => ok.indexOf(x) >= 0).slice(0, 2);
+      if (c.length) { f.tipo = tp; f.cont = c; }
+    }
     return f;
   }
   const objetivo = (s) => (s.tipo === "rec" ? CONT.recuperacion.obj : s.tipo === "pre" ? "Activar sin generar fatiga: velocidad de reacción, estrategia a balón parado y confianza para el partido." : s.cont.map((c) => CONT[c].obj).join(" "));
@@ -2632,6 +2664,7 @@ var Vision = (function () {
       <section class="card"><div class="card-h"><h2>Esta semana</h2><span class="muted num">${fmtUA(wkUA)} UA · ${wkS.length} ${wkS.length === 1 ? "sesión" : "sesiones"}</span></div>
         ${weekGrid(wk)}
         <p class="muted" style="font-size:13px">Barra verde: carga prevista. Naranja: carga real (RPE × minutos). Toca un día libre para crear una sesión.</p></section>
+      ${vMesCard()}
       <section class="card"><div class="card-h"><h2>Claves en ${c.n}</h2><span class="tag">${c.fmt}</span></div>
         <p>${c.foco}</p>
         <div class="grid2" style="align-items:start"><div class="kv"><b>Prioriza</b><ul class="pts">${c.claves.map((x) => `<li>${x}</li>`).join("")}</ul></div>
@@ -2848,6 +2881,7 @@ var Vision = (function () {
       <section class="card"><div class="card-h"><button class="iconbtn" data-a="wk" data-d="-1" aria-label="Semana anterior">${ic("back")}</button><h2 style="text-align:center;flex:1">${UI.wk === 0 ? "Esta semana" : "Semana del " + d0.getDate() + " " + MESES[d0.getMonth()]}</h2><button class="iconbtn" data-a="wk" data-d="1" aria-label="Semana siguiente">${ic("next")}</button></div>
         ${weekGrid(wk)}
         <div class="stats" style="grid-template-columns:repeat(3,1fr)"><div class="stat"><b>${ws.length}</b><span>Sesiones</span></div><div class="stat"><b>${fmtUA(plan)}</b><span>UA previstas</span></div><div class="stat"><b>${real ? fmtUA(real) : "—"}</b><span>UA reales</span></div></div></section>
+      ${vMesCard()}
       <div class="list">${ws.length ? ws.map(sesItem).join("") : `<div class="empty">No hay sesiones esta semana.<button class="btn sm primary" data-a="tab" data-v="crear">Crear sesión</button></div>`}</div>
       ${rest.length ? `<p class="section-t">Otras sesiones</p><div class="list">${rest.map(sesItem).join("")}</div>` : ""}
       <section class="card"><h2>Copia de seguridad</h2><p class="muted" style="font-size:14px">Tus datos se guardan en este dispositivo. Exporta una copia para pasarla a otro móvil o guardarla.</p>
@@ -2879,11 +2913,14 @@ var Vision = (function () {
       <section class="card"><h2>Modelo de juego</h2><p class="muted" style="font-size:14px">Escribe un principio por línea. Aparecen en las sesiones de periodización táctica, juego de posición y entrenamiento estructurado.</p>
         <textarea data-tf="modelo" aria-label="Principios del modelo de juego">${esc(t.modelo || "")}</textarea></section>
       <section class="card"><div class="card-h"><h2>Plantilla</h2><span class="muted num">${a.N + a.gk} disponibles de ${S.players.length}</span></div>
+        ${players.length ? `<p class="muted" style="font-size:13px;margin:0 0 6px">Toca un nombre para ver su ficha, valorarlo y enviar el informe a la familia.</p>` : ""}
         ${S.players.some((p) => p.ej) ? `<p class="note">Plantilla de ejemplo. <button class="link" data-a="ask" data-v="clearPl">Vaciar plantilla</button></p>` : ""}
-        <div>${players.length ? players.map((p) => `<div class="player${p.disp ? "" : " off"}"><span class="dorsal">${p.dorsal}</span><span class="pos">${POS[p.pos]}</span><span class="pn">${esc(p.nombre)}</span>
+        <div>${players.length ? players.map((p) => `<div class="player${p.disp ? "" : " off"}"><span class="dorsal">${p.dorsal}</span><span class="pos">${POS[p.pos]}</span><button class="pn link" data-a="jugOpen" data-id="${p.id}">${esc(p.nombre)}${evaVacia(evalDe(p.id, tempDe().k, trimDe())) ? "" : ' <small class="muted">★</small>'}</button>
           <button class="toggle${p.disp ? " on" : ""}" data-a="pdisp" data-id="${p.id}" aria-pressed="${p.disp}">${p.disp ? "Disponible" : "Baja"}</button><button class="iconbtn" style="width:34px;height:34px" data-a="pdel" data-id="${p.id}" aria-label="Eliminar a ${esc(p.nombre)}">${ic("close")}</button></div>`).join("") : `<p class="muted">Todavía no hay jugadores.</p>`}</div>
         <div class="addp"><input type="number" id="pd" min="1" max="99" placeholder="Nº" aria-label="Dorsal"><input type="text" id="pn" placeholder="Nombre" aria-label="Nombre del jugador">
           <select id="pp" aria-label="Posición"><option value="DEF">DEF</option><option value="MED">MED</option><option value="DEL">DEL</option><option value="POR">POR</option></select><button class="btn primary" data-a="padd">Añadir</button></div></section>
+      ${vAvisosCard()}
+      ${vSegundoCard()}
       ${vCopiasCard()}
       <p class="muted" style="font-size:13px;text-align:center">Míster ${typeof VERSION !== "undefined" ? VERSION : ""} · ${EX.length} tareas · 7 metodologías</p>`;
   }
@@ -4134,11 +4171,12 @@ var Vision = (function () {
   function copiaRestaurar(txt) {
     let d = null;
     try { d = JSON.parse(txt); } catch (e) { d = null; }
+    if (d && d.app === "mister" && d.tipo === "equipo") { equipoAbrir(txt); return; }
     if (!d || d.app !== "mister" || !d.datos || !d.datos.team) { toast("Ese archivo no es una copia de Míster"); return; }
     UI.copia = d; openSheet({ t: "copia" });
   }
   function vCopiasCard() {
-    const fh = (ts) => { const d = new Date(ts); return fFecha(d.toISOString().slice(0, 10)) + " a las " + String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0"); };
+    const fh = (ts) => { const d = new Date(ts); return fFecha(isoDia(ts)) + " a las " + String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0"); };
     const auto = !!(NATIVE && NATIVE.backupWrite);
     return `<section class="card" id="copias"><h2>Copias de seguridad</h2>
       ${auto ? `<p style="font-size:15px">Se hace una copia automática en la carpeta <b>Descargas/Mister</b> del móvil, que no se borra aunque desinstales la app.${S.copiaTs ? ` Última: ${fh(S.copiaTs)}.` : ""}</p>`
@@ -4591,7 +4629,7 @@ var Vision = (function () {
     if (navigator.canShare && navigator.canShare({ files: [file] })) { try { await navigator.share({ files: [file], title: titulo }); return; } catch (e) { if (e && e.name === "AbortError") return; } }
     const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = nombre; document.body.appendChild(a); a.click();
     setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 4000);
-    toast("Vídeo guardado en descargas");
+    toast(/^video/.test(blob.type) ? "Vídeo guardado en descargas" : "Archivo guardado en descargas");
   }
   function pzCerrar() {
     const P = UI.pz; if (!P) return;
@@ -4691,6 +4729,10 @@ var Vision = (function () {
         body = `<div class="pz-nums">${Array.from({ length: 25 }, (_, i) => i + 1).map((n) => `<button class="chip${f.n === n ? " on" : ""}" data-a="pzNum" data-n="${n}">${n}</button>`).join("")}</div>
           <div class="row"><button class="btn" data-a="pzNum" data-n="0">Sin dorsal</button><button class="btn" data-a="pzQuitar">Quitar del campo</button></div>`;
       } else { title = "Balón"; body = `<button class="btn" data-a="pzQuitar">Quitar del campo</button>`; }
+    } else if (SHEETS[sh.t]) {
+      const r = SHEETS[sh.t](sh);
+      if (!r) { UI.sheet = null; box.innerHTML = ""; return; }
+      title = r.title; body = r.body;
     } else if (sh.t === "ask") {
       const Q = { delS: ["¿Borrar esta sesión?", "No se puede deshacer.", "Borrar sesión"], clearEj: ["¿Empezar de cero?", "Se borran la plantilla, el partido y las sesiones de ejemplo. Tus datos se mantienen.", "Borrar ejemplos"], delM: ["¿Borrar este partido?", "Las sesiones creadas a partir de él se mantienen.", "Borrar partido"], clearPl: ["¿Vaciar la plantilla?", "Se eliminan todos los jugadores.", "Vaciar plantilla"], liveExit: ["¿Salir del entrenamiento?", "Se detiene el cronómetro.", "Salir"], delJ: ["¿Borrar esta jugada?", "No se puede deshacer.", "Borrar jugada"], lendP: ["¿Terminar esta parte?", "El cronómetro se para y se guarda la duración de la parte.", "Terminar parte"], lfin: ["¿Terminar el partido?", "Se cierra el marcador y se analizan las estadísticas.", "Terminar partido"] }[sh.v];
       title = Q[0];
@@ -5330,7 +5372,8 @@ var Vision = (function () {
   function render() {
     let html;
     if (UI.page && UI.page.t === "video" && $("#vid") && UI.vid && $("#vid").dataset.url === UI.vid.url && UI.vid.mid === UI.page.id) { vRefresh(findM(UI.page.id)); renderNav(); renderSheet(); return; }
-    if (UI.page) html = UI.page.t === "draft" ? vSession(UI.draft, true) : UI.page.t === "match" ? vMatch(findM(UI.page.id)) : UI.page.t === "mlive" ? vLive(findM(UI.page.id)) : UI.page.t === "video" ? vVideo(findM(UI.page.id)) : vSession(findS(UI.page.id), false);
+    if (UI.page && PAGES[UI.page.t]) html = PAGES[UI.page.t](UI.page);
+    else if (UI.page) html = UI.page.t === "draft" ? vSession(UI.draft, true) : UI.page.t === "match" ? vMatch(findM(UI.page.id)) : UI.page.t === "mlive" ? vLive(findM(UI.page.id)) : UI.page.t === "video" ? vVideo(findM(UI.page.id)) : vSession(findS(UI.page.id), false);
     else html = { inicio: vInicio, crear: vCrear, biblioteca: vBiblio, sesiones: vSesiones, partidos: vPartidos, pizarra: vPizarra, equipo: vEquipo }[UI.tab]();
     $("#main").innerHTML = html;
     renderNav(); renderSheet();
@@ -5351,6 +5394,13 @@ var Vision = (function () {
     if (ds.conv && UI.conv) {
       UI.conv[ds.conv] = el.value;
       if (ds.conv === "hora" && !UI.conv.quedada && aMin(el.value) != null) { UI.conv.quedada = aHora(aMin(el.value) - (S.team.cat <= 2 ? 30 : 45)); renderSheet(); }
+      return;
+    }
+    if (ds.eqfile && el.files && el.files[0]) { const fr = new FileReader(); fr.onload = () => equipoAbrir(String(fr.result)); fr.readAsText(el.files[0]); return; }
+    if (ds.jf && UI.page && UI.page.t === "jug") {
+      const p = S.players.find((x) => x.id === UI.page.id); if (!p) return;
+      if (ds.jf === "dorsal") p.dorsal = Number(el.value) || p.dorsal; else if (ds.jf === "nombre") p.nombre = el.value.trim() || p.nombre; else p[ds.jf] = el.value;
+      save(); UI.form = null; if (ds.jf === "pos") { const y = window.scrollY; render(); window.scrollTo(0, y); }
       return;
     }
     if (ds.copia && el.files && el.files[0]) { const fr = new FileReader(); fr.onload = () => copiaRestaurar(String(fr.result)); fr.readAsText(el.files[0]); return; }
@@ -5380,12 +5430,388 @@ var Vision = (function () {
     else if (el.id === "fcfq") { UI.fcfw.q = el.value; const box = $("#fcflist"); if (box) { const tmp = document.createElement("div"); tmp.innerHTML = fcfSheet(); const nl = tmp.querySelector("#fcflist"); if (nl) box.innerHTML = nl.innerHTML; } }
     else if (el.id === "addq") { UI.sheet.q = el.value; $("#addlist").innerHTML = addList(el.value); }
     else if (ds.conv && UI.conv) { UI.conv[ds.conv] = el.value; }
+    else if (ds.ev && UI.page && UI.page.t === "jug") { const E = evalDe(UI.page.id, tempDe().k, UI.jtr || trimDe(), true); E[ds.ev] = el.value; E.ts = Date.now(); save(); }
     else if (ds.tf === "nombre" || ds.tf === "modelo") { S.team[ds.tf] = el.value; save(); }
     else if (ds.mf === "rival" || ds.mf === "texto") { const m = curM(); if (m) { m[ds.mf] = el.value; save(); } }
   });
   window.addEventListener("hashchange", () => {
     const h = location.hash.slice(1);
     if (TABS.indexOf(h) >= 0) { UI.tab = h; UI.page = null; UI.sheet = null; if (h === "crear" && !UI.form) UI.form = formDefaults(); render(); window.scrollTo(0, 0); }
+  });
+
+  /* ---------- TEMPORADA: FICHA DE CADA NIÑO Y PLAN DE LA TEMPORADA ---------- */
+  const PAGES = {}, SHEETS = {};
+  const MESN = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+  /* La temporada va de agosto a julio: 2026/27 */
+  function tempDe(f) {
+    const d = parse(f || today()), y0 = d.getMonth() >= 7 ? d.getFullYear() : d.getFullYear() - 1;
+    return { k: y0 + "-" + String(y0 + 1).slice(2), n: y0 + "/" + String(y0 + 1).slice(2), ini: y0 + "-08-01", fin: y0 + 1 + "-07-31", y0 };
+  }
+  const trimDe = (f) => { const m = parse(f || today()).getMonth(); return m >= 7 ? "T1" : m <= 2 ? "T2" : "T3"; };
+  const TRIM = { T1: ["1er trimestre", "sep – dic", "1T", "1er trim."], T2: ["2º trimestre", "ene – mar", "2T", "2º trim."], T3: ["3er trimestre", "abr – jun", "3T", "3er trim."] };
+  const EVA = [
+    ["tec", "Técnica con balón", "Conducción, pase, control y tiro"],
+    ["jue", "Entiende el juego", "Se coloca, ve al compañero libre, ayuda a defender"],
+    ["fis", "Coordinación y agilidad", "Equilibrio, cambios de dirección, velocidad"],
+    ["act", "Actitud y esfuerzo", "Atiende, lo intenta, no se rinde"],
+    ["com", "Compañerismo y respeto", "Anima, comparte el balón, respeta a todos"]
+  ];
+  const evaAreas = (p) => (p && p.pos === "POR" ? EVA.concat([["por", "Portería", "Blocaje, colocación y saque"]]) : EVA);
+  const POSN = { POR: "Portero", DEF: "Defensa", MED: "Centrocampista", DEL: "Delantero" };
+  const ESTR = ["Sin valorar", "Empezando", "En camino", "Bien", "Muy bien", "Destaca"];
+  const evaVacia = (e) => !e || !Object.keys(e.r || {}).some((k) => e.r[k]);
+  function evalDe(pid, tk, tr, crear) {
+    if (crear) S.evals = S.evals || {};
+    const E = S.evals || {};
+    if (!E[pid]) { if (!crear) return null; E[pid] = {}; }
+    if (!E[pid][tk]) { if (!crear) return null; E[pid][tk] = {}; }
+    if (!E[pid][tk][tr]) { if (!crear) return null; E[pid][tk][tr] = { r: {}, obj: "", com: "" }; }
+    return E[pid][tk][tr];
+  }
+  function jugStats(p, T) {
+    const ss = S.sessions.filter((s) => !s.ejemplo && s.fecha >= T.ini && s.fecha <= T.fin && s.fecha <= today() && (s.asist || s.cierre));
+    const ms = S.partidos.filter((m) => !m.ejemplo && m.fecha >= T.ini && m.fecha <= T.fin && jugadoM(m));
+    let conv = 0, jug = 0, seg = 0;
+    const ev = {};
+    ms.forEach((m) => {
+      const s = m.vivo ? minutos(m).seg[p.id] || 0 : 0, evs = (m.ev || []).filter((e) => e.j === p.id);
+      const enConv = !!(m.conv && m.conv.ids && m.conv.ids.indexOf(p.id) >= 0);
+      if (enConv || s > 0 || evs.length) conv++;
+      if (s > 0 || evs.length) jug++;
+      seg += s;
+      evs.forEach((e) => { ev[e.t] = (ev[e.t] || 0) + 1; });
+    });
+    return { ses: ss.length, ent: ss.filter((s) => present(s, p)).length, ms: ms.length, conv, jug, min: Math.round(seg / 60), ev };
+  }
+  const EV_FICHA = [["gol", "goles", "gol"], ["tiro_p", "tiros a puerta", "tiro a puerta"], ["recup", "recuperaciones", "recuperación"], ["regate", "regates", "regate"], ["pase", "pases", "pase"], ["parada", "paradas", "parada"]];
+  const evTxt = (ev) => EV_FICHA.filter((x) => ev[x[0]]).map((x) => ev[x[0]] + " " + (ev[x[0]] === 1 ? x[2] : x[1]));
+
+  PAGES.jug = (pg) => {
+    const p = S.players.find((x) => x.id === pg.id);
+    if (!p) { UI.page = null; return vEquipo(); }
+    const T = tempDe(), tr = UI.jtr || trimDe(), st = jugStats(p, T), E = evalDe(p.id, T.k, tr) || { r: {}, obj: "", com: "" };
+    const areas = evaAreas(p), evo = ["T1", "T2", "T3"].map((t) => evalDe(p.id, T.k, t)), hechos = evo.filter((e) => !evaVacia(e)).length;
+    const otros = evTxt(st.ev).filter((x) => !/gol/.test(x));
+    let evoHtml = "";
+    if (hechos >= 2) {
+      const mejoras = [];
+      const filas = areas.map((a) => {
+        const vs = evo.map((e) => (e && e.r[a[0]]) || 0), ult = vs.filter(Boolean);
+        if (ult.length >= 2 && ult[ult.length - 1] > ult[ult.length - 2]) mejoras.push(a[1]);
+        return `<tr><td>${a[1]}</td>${vs.map((v, i) => { const prev = vs.slice(0, i).filter(Boolean).pop(); const fl = v && prev ? (v > prev ? ' <i class="up">▲</i>' : v < prev ? ' <i class="dn">▼</i>' : "") : ""; return `<td>${v ? v + fl : "—"}</td>`; }).join("")}</tr>`;
+      }).join("");
+      evoHtml = `<section class="card"><h2>Evolución</h2><table class="evo"><thead><tr><th></th><th>1T</th><th>2T</th><th>3T</th></tr></thead><tbody>${filas}</tbody></table>
+        <p class="muted" style="font-size:14px;margin-bottom:0">${mejoras.length ? "Ha mejorado en " + mejoras.join(", ").toLowerCase() + "." : "Se mantiene respecto al trimestre anterior."}</p></section>`;
+    }
+    return `<div class="pagebar"><button class="iconbtn" data-a="back" aria-label="Volver">${ic("back")}</button><h2>Ficha del jugador</h2></div>
+      <section class="card jhead"><span class="dorsal xl">${esc(p.dorsal)}</span><div><h2>${esc(p.nombre)}</h2><p class="muted" style="margin:0">${POSN[p.pos] || ""} · Temporada ${T.n}</p></div></section>
+      <section class="card"><h2>Esta temporada</h2>
+        <div class="stats"><div class="stat"><b>${st.ses ? st.ent + "/" + st.ses : "—"}</b><span>Entrenos</span></div><div class="stat"><b>${st.conv}</b><span>Convocado</span></div><div class="stat"><b>${st.min}'</b><span>Minutos</span></div><div class="stat"><b>${st.ev.gol || 0}</b><span>Goles</span></div></div>
+        ${otros.length ? `<p style="font-size:14px;margin-bottom:0">${otros.join(" · ")}</p>` : ""}
+        ${st.ses ? "" : '<p class="muted" style="font-size:13px;margin-bottom:0">Pasa lista al empezar cada entreno (en la sesión, «Asistencia») y aquí verás cuántos días ha venido.</p>'}</section>
+      <section class="card"><h2>Valoración</h2>
+        <div class="seg" role="group" aria-label="Trimestre">${Object.keys(TRIM).map((k) => `<button class="${tr === k ? "on" : ""}" data-a="jtr" data-v="${k}" aria-pressed="${tr === k}" aria-label="${TRIM[k][0]}">${TRIM[k][3]}${evaVacia(evo[["T1", "T2", "T3"].indexOf(k)]) ? "" : " ✓"}</button>`).join("")}</div>
+        <p class="muted" style="font-size:13px">Toca las estrellas. Valora su progreso respecto a él mismo, no comparándolo con los demás.</p>
+        ${areas.map((a) => { const v = E.r[a[0]] || 0; return `<div class="eva"><div class="eva-t"><b>${a[1]}</b><small>${a[2]}</small></div><div class="stars" role="group" aria-label="${a[1]}: ${ESTR[v]}">${[1, 2, 3, 4, 5].map((n) => `<button class="st${v >= n ? " on" : ""}" data-a="evS" data-k="${a[0]}" data-v="${n}" aria-label="${n} de 5" aria-pressed="${v === n}">★</button>`).join("")}<small>${ESTR[v]}</small></div></div>`; }).join("")}
+        <div class="field"><label for="ev-obj">Lo que vamos a trabajar con él</label><input type="text" id="ev-obj" data-ev="obj" value="${esc(E.obj || "")}" placeholder="Ej.: levantar la cabeza al conducir"></div>
+        <div class="field"><label for="ev-com">Mensaje para la familia</label><textarea id="ev-com" data-ev="com" placeholder="Ej.: Está disfrutando mucho y cada semana se atreve más a pedir el balón.">${esc(E.com || "")}</textarea></div>
+        <div class="row"><button class="btn primary" data-a="infOpen">${ic("share")} Informe para la familia</button></div></section>
+      ${evoHtml}
+      <section class="card"><h2>Datos</h2>
+        <div class="field"><label for="jf-nombre">Nombre</label><input type="text" id="jf-nombre" data-jf="nombre" value="${esc(p.nombre)}"></div>
+        <div class="grid2"><div class="field"><label for="jf-dorsal">Dorsal</label><input type="number" id="jf-dorsal" data-jf="dorsal" min="1" max="99" value="${esc(p.dorsal)}"></div>
+        <div class="field"><label for="jf-pos">Posición</label><select id="jf-pos" data-jf="pos">${["POR", "DEF", "MED", "DEL"].map((k) => `<option value="${k}"${p.pos === k ? " selected" : ""}>${POSN[k]}</option>`).join("")}</select></div></div></section>`;
+  };
+
+  /* Informe para la familia: una imagen para mandar por WhatsApp */
+  let logoImg = null;
+  function logoListo() {
+    if (logoImg && logoImg.complete && logoImg.naturalWidth) return Promise.resolve(logoImg);
+    return new Promise((r) => { logoImg = new Image(); logoImg.onload = () => r(logoImg); logoImg.onerror = () => r(null); logoImg.src = LOGO; });
+  }
+  function lineas(ctx, txt, w) {
+    const out = [];
+    String(txt || "").split(/\n+/).forEach((par) => {
+      let l = "";
+      par.split(/\s+/).filter(Boolean).forEach((pal) => { const t = l ? l + " " + pal : pal; if (ctx.measureText(t).width > w && l) { out.push(l); l = pal; } else l = t; });
+      if (l) out.push(l);
+    });
+    return out;
+  }
+  function estrella(ctx, cx, cy, r, on) {
+    ctx.beginPath();
+    for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + (i * Math.PI) / 5, rr = i % 2 ? r * 0.45 : r; ctx[i ? "lineTo" : "moveTo"](cx + rr * Math.cos(a), cy + rr * Math.sin(a)); }
+    ctx.closePath(); ctx.fillStyle = on ? "#F2B705" : "#DADFD8"; ctx.fill();
+  }
+  async function infCanvas(p, o) {
+    const img = await logoListo();
+    const T = tempDe(), tr = o.tr, E = evalDe(p.id, T.k, tr) || { r: {}, obj: "", com: "" }, st = jugStats(p, T), W = 1080, M = 72;
+    const c = document.createElement("canvas"); c.width = W; c.height = 2600;
+    const x = c.getContext("2d"), F = (s, b) => (b ? "700 " : "400 ") + s + "px system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
+    x.fillStyle = "#F4F6F1"; x.fillRect(0, 0, W, c.height);
+    x.fillStyle = "#2F7F4B"; x.fillRect(0, 0, W, 250);
+    if (img) x.drawImage(img, M, 45, 160, 160);
+    x.fillStyle = "#fff"; x.font = F(46, true); x.fillText(S.team.nombre || "Mi equipo", img ? M + 190 : M, 118);
+    x.font = F(32); x.globalAlpha = 0.9; x.fillText("Informe del " + TRIM[tr][0] + " · " + T.n, img ? M + 190 : M, 170); x.globalAlpha = 1;
+    let y = 340;
+    x.fillStyle = "#2F7F4B"; x.beginPath(); x.arc(M + 56, y - 22, 56, 0, Math.PI * 2); x.fill();
+    x.fillStyle = "#fff"; x.font = F(52, true); x.textAlign = "center"; x.fillText(String(p.dorsal || ""), M + 56, y - 4); x.textAlign = "left";
+    x.fillStyle = "#1D2A22"; x.font = F(68, true); x.fillText(p.nombre, M + 140, y);
+    y += 46; x.font = F(32); x.fillStyle = "#5B6B60"; x.fillText(POSN[p.pos] || "", M + 140, y);
+    y += 70;
+    const caja = (h) => { x.fillStyle = "#fff"; x.beginPath(); if (x.roundRect) x.roundRect(M - 24, y, W - 2 * M + 48, h, 28); else x.rect(M - 24, y, W - 2 * M + 48, h); x.fill(); };
+    if (o.est && !evaVacia(E)) {
+      const as = evaAreas(p).filter((a) => E.r[a[0]]);
+      caja(70 + as.length * 92 + 36);
+      y += 70; x.fillStyle = "#2F7F4B"; x.font = F(34, true); x.fillText("Cómo va", M, y);
+      as.forEach((a) => {
+        y += 92; x.fillStyle = "#1D2A22"; x.font = F(36); x.fillText(a[1], M, y - 12);
+        for (let i = 0; i < 5; i++) estrella(x, W - M - 30 - (4 - i) * 66, y - 24, 28, i < E.r[a[0]]);
+      });
+      y += 96;
+    }
+    if (o.datos) {
+      /* Solo lo que suma: sin «0 goles» ni minutos si no se apuntaron */
+      const cs = [st.ses && [st.ent + "/" + st.ses, "Entrenos"], [String(st.conv), st.conv === 1 ? "Partido" : "Partidos"], st.min && [st.min + "'", "Minutos"], st.ev.gol && [String(st.ev.gol), st.ev.gol === 1 ? "Gol" : "Goles"]].filter(Boolean);
+      caja(190); const bw = (W - 2 * M) / cs.length;
+      cs.forEach((s, i) => { x.textAlign = "center"; x.fillStyle = "#1D2A22"; x.font = F(58, true); x.fillText(s[0], M + bw * i + bw / 2, y + 100); x.fillStyle = "#5B6B60"; x.font = F(28); x.fillText(s[1], M + bw * i + bw / 2, y + 148); });
+      x.textAlign = "left"; y += 250;
+    }
+    const bloque = (tit, txt) => {
+      if (!String(txt || "").trim()) return;
+      x.font = F(36); const ls = lineas(x, txt, W - 2 * M);
+      caja(100 + ls.length * 52);
+      y += 66; x.fillStyle = "#2F7F4B"; x.font = F(34, true); x.fillText(tit, M, y);
+      x.fillStyle = "#1D2A22"; x.font = F(36); ls.forEach((l) => { y += 52; x.fillText(l, M, y); });
+      y += 74;
+    };
+    bloque("Lo que estamos trabajando", E.obj);
+    bloque("Mensaje del entrenador", E.com);
+    y += 10; x.fillStyle = "#5B6B60"; x.font = F(28); x.textAlign = "center"; x.fillText("¡Gracias por confiar en nosotros!", W / 2, y); x.textAlign = "left";
+    const out = document.createElement("canvas"); out.width = W; out.height = Math.max(y + 60, 1080);
+    const ox = out.getContext("2d"); ox.fillStyle = "#F4F6F1"; ox.fillRect(0, 0, W, out.height); ox.drawImage(c, 0, 0);
+    return out;
+  }
+  async function infPreview() {
+    const I = UI.inf, p = I && S.players.find((x) => x.id === I.id); if (!p) return;
+    const c = await infCanvas(p, I), url = c.toDataURL("image/png"), im = $("#infimg");
+    I.url = url; if (im) im.src = url;
+  }
+  SHEETS.inf = () => {
+    const I = UI.inf, p = I && S.players.find((x) => x.id === I.id); if (!p) return null;
+    const E = evalDe(p.id, tempDe().k, I.tr);
+    return { title: "Informe para la familia", body: `${evaVacia(E) && !(E && (E.obj || E.com)) ? `<p class="note warn">Todavía no has valorado el ${TRIM[I.tr][0]}: el informe solo llevará sus datos.</p>` : ""}
+      <img id="infimg" class="infimg" alt="Vista previa del informe" src="${I.url || ""}">
+      <div class="chips"><button class="chip${I.est ? " on" : ""}" data-a="infTog" data-k="est" aria-pressed="${I.est}">Estrellas</button><button class="chip${I.datos ? " on" : ""}" data-a="infTog" data-k="datos" aria-pressed="${I.datos}">Entrenos, minutos y goles</button></div>
+      <div class="row"><button class="btn primary" data-a="infSend">${ic("share")} Enviar (WhatsApp…)</button></div>` };
+  };
+
+  /* Plan de la temporada: qué toca trabajar cada mes */
+  const PLAN_MESES = [8, 9, 10, 11, 0, 1, 2, 3, 4, 5];
+  const PLAN_BASE = {
+    8: ["conduccion", "coordinacion", "posesion", "resistencia"], 9: ["pase", "posesion", "salida"], 10: ["regate", "proteccion", "progresion"],
+    11: ["tiro", "llegada", "area", "coordinacion"], 0: ["defensa1", "tras_perdida", "pressing", "proteccion"], 1: ["posesion", "amplitud", "progresion"],
+    2: ["amplitud", "llegada", "velocidad", "pase"], 3: ["contra", "tras_perdida", "bloque", "defensa1", "conduccion"], 4: ["salida", "velocidad", "abp", "posesion", "tiro"], 5: ["tiro", "regate", "conduccion"]
+  };
+  function planGen(cat) {
+    const ent = Analisis.entrenables(cat), m = {};
+    PLAN_MESES.forEach((k) => { m[k] = PLAN_BASE[k].filter((c) => ent.indexOf(c) >= 0).slice(0, 2); if (!m[k].length) m[k] = ent.slice(0, 1); });
+    return m;
+  }
+  const planGuardado = (tk) => (S.planes || {})[tk] || null;
+  const planMeses = (tk) => { const P = planGuardado(tk); return P ? P.m : planGen(S.team.cat); };
+  function planMes(f) { const d = parse(f || today()); return (planMeses(tempDe(f).k)[d.getMonth()] || []).filter((c) => CONT[c]); }
+  const sesMes = (y, k) => { const pre = y + "-" + String(k + 1).padStart(2, "0"); return S.sessions.filter((s) => !s.ejemplo && s.fecha.slice(0, 7) === pre); };
+  const anioMes = (T, k) => (k >= 7 ? T.y0 : T.y0 + 1);
+  function vMesCard() {
+    const cs = planMes(); if (!cs.length) return "";
+    const d = parse(today()), ss = sesMes(d.getFullYear(), d.getMonth()), hechos = cs.filter((c) => ss.some((s) => (s.cont || []).indexOf(c) >= 0));
+    return `<section class="card"><div class="card-h"><h2>Este mes toca</h2><button class="link" data-a="planOpen">Plan de temporada</button></div>
+      <div class="tags">${cs.map((c) => `<span class="tag${hechos.indexOf(c) >= 0 ? " ok" : " acc"}">${hechos.indexOf(c) >= 0 ? "✓ " : ""}${CONT[c].n}</span>`).join("")}</div>
+      <p class="muted" style="font-size:14px">${ss.length ? `${ss.length} ${ss.length === 1 ? "sesión" : "sesiones"} en ${MESN[d.getMonth()].toLowerCase()}: ${hechos.length} de ${cs.length} contenidos trabajados.` : `Todavía no hay sesiones en ${MESN[d.getMonth()].toLowerCase()}.`}</p>
+      <div class="row"><button class="btn" data-a="planCrear">${ic("plus")} Sesión de este mes</button></div></section>`;
+  }
+  PAGES.plan = () => {
+    const T = tempDe(), P = planGuardado(T.k), m = planMeses(T.k), cm = parse(today()).getMonth(), hoy = today().slice(0, 7);
+    return `<div class="pagebar"><button class="iconbtn" data-a="back" aria-label="Volver">${ic("back")}</button><h2>Plan de temporada ${T.n}</h2></div>
+      <section class="card"><p style="margin-top:0">Qué trabajar cada mes en ${CATS[S.team.cat].n}, de lo más sencillo a lo más complejo. Al crear una sesión, Míster te propone el contenido del mes.</p>
+        <p class="muted" style="font-size:14px;margin-bottom:0">${P ? "Plan personalizado." : "Plan propuesto según la edad."} Toca un mes para cambiar sus contenidos.</p></section>
+      <div class="list">${PLAN_MESES.map((k) => {
+        const y = anioMes(T, k), cs = m[k] || [], ss = sesMes(y, k), pre = y + "-" + String(k + 1).padStart(2, "0");
+        const hechos = cs.filter((c) => ss.some((s) => (s.cont || []).indexOf(c) >= 0)).length, pasado = pre < hoy;
+        return `<button class="item plan${k === cm && pre === hoy ? " now" : ""}" data-a="planMes" data-v="${k}"><span class="datebox"><b>${MESES[k]}</b><span>${y}</span></span>
+          <span class="it"><h3>${cs.length ? cs.map((c) => esc(CONT[c].n)).join(" · ") : "Sin contenido"}</h3><span class="tags">${k === cm && pre === hoy ? '<span class="tag acc">Este mes</span>' : ""}${ss.length ? `<span class="tag">${ss.length} ${ss.length === 1 ? "sesión" : "sesiones"}</span>` : ""}${cs.length && (ss.length || pasado) ? `<span class="tag${hechos === cs.length ? " ok" : pasado ? " warn" : ""}">${hechos}/${cs.length} trabajados</span>` : ""}</span></span></button>`;
+      }).join("")}</div>
+      ${P ? `<div class="row"><button class="btn" data-a="planReset">Volver al plan propuesto</button></div>` : ""}`;
+  };
+  SHEETS.planMes = (sh) => {
+    const T = tempDe(), k = Number(sh.k), cs = planMeses(T.k)[k] || [], ent = Analisis.entrenables(S.team.cat);
+    const grupos = [["tec", "Técnica"], ["tac", "Táctica"], ["fis", "Física"]].map((g) => { const l = ent.filter((c) => CONT[c].f === g[0]); return l.length ? `<div class="kv"><b>${g[1]}</b><div class="chips">${l.map((c) => `<button class="chip${cs.indexOf(c) >= 0 ? " on" : ""}" data-a="planTog" data-v="${c}" aria-pressed="${cs.indexOf(c) >= 0}">${CONT[c].n}</button>`).join("")}</div></div>` : ""; }).join("");
+    return { title: MESN[k] + " " + anioMes(T, k), body: `<p class="muted" style="margin-top:0">Elige hasta 3 contenidos. Mejor pocos y bien repetidos.</p>${grupos}<div class="row"><button class="btn primary" data-a="closeSheet">Hecho</button></div>` };
+  };
+  function planEditar(fn) {
+    const T = tempDe(); S.planes = S.planes || {};
+    if (!S.planes[T.k]) S.planes[T.k] = { cat: S.team.cat, m: planGen(S.team.cat) };
+    fn(S.planes[T.k].m); save();
+  }
+
+  /* Avisos en el móvil (Android): convocatoria pendiente, el día antes y el mismo día del partido */
+  var avisosSig = null, avisosT = null;
+  function avisosLista() {
+    if (S.team.avisos === false) return [];
+    const ahora = Date.now(), lim = ahora + 21 * 86400000, out = [], vistos = {}, prox = [];
+    if (S.fcf && S.fcf.link) fcfMine().forEach((p) => {
+      if (p.jugado || !p.fecha || p.fecha < today()) return;
+      const m = S.partidos.find((x) => x.fcf === fcfKey(p));
+      if (m) vistos[m.id] = 1;
+      prox.push({ k: "f" + fcfKey(p), fecha: p.fecha, hora: (m && m.hora) || p.hora || "", rival: rivalDe(p), casa: enCasa(p), campo: (m && m.campo) || p.campo || "", m });
+    });
+    S.partidos.forEach((m) => { if (vistos[m.id] || m.ejemplo || jugadoM(m) || !m.fecha || m.fecha < today()) return; prox.push({ k: "m" + m.id, fecha: m.fecha, hora: m.hora || "", rival: m.rival || "el rival", casa: m.local, campo: m.campo || "", m }); });
+    prox.forEach((x) => {
+      const d0 = parse(x.fecha), hm = aMin(x.hora), at = (dd, min) => new Date(d0.getFullYear(), d0.getMonth(), d0.getDate() + dd, 0, min).getTime();
+      const vs = (x.casa ? "En casa contra " : "En el campo de ") + x.rival, enviada = !!(x.m && x.m.conv && x.m.conv.enviada);
+      const qd = x.m && x.m.conv && x.m.conv.quedada ? " Quedada a las " + x.m.conv.quedada + "." : "";
+      const add = (id, t, tit, txt) => { if (t > ahora + 60000 && t < lim) out.push({ id: x.k + id, t, tit, txt }); };
+      if (!enviada) add("c", at(-2, 20 * 60), "Convocatoria pendiente", `${fechaLarga(x.fecha)}: ${vs.toLowerCase()}. Envía la convocatoria a las familias desde Míster.`);
+      add("v", at(-1, 20 * 60), "Mañana hay partido", `${vs}${x.hora ? " a las " + x.hora : ""}${x.campo ? " · " + x.campo : ""}.${qd}${enviada ? "" : " Aún no has enviado la convocatoria."}`);
+      if (hm != null) add("h", at(0, Math.max(7 * 60, hm - 120)), "Hoy hay partido", `${vs} a las ${x.hora}.${qd}`);
+    });
+    return out.sort((a, b) => a.t - b.t).slice(0, 40);
+  }
+  function avisosSync(ya) {
+    if (!NATIVE || !NATIVE.avisos) return;
+    clearTimeout(avisosT);
+    avisosT = setTimeout(() => {
+      let l = [];
+      try { l = avisosLista(); } catch (e) { l = []; }
+      const sig = JSON.stringify(l);
+      if (sig === avisosSig) return;
+      avisosSig = sig;
+      try { NATIVE.avisos(sig); } catch (e) { /* sin avisos */ }
+    }, ya ? 0 : 1500);
+  }
+
+  /* Compartir el equipo con el segundo entrenador: un archivo que se añade a su Míster */
+  function equipoArchivo(conEval) {
+    const sin = (l) => (l || []).filter((x) => !x.ejemplo);
+    return { app: "mister", tipo: "equipo", v: 1, fecha: Date.now(), de: S.team.nombre, version: typeof VERSION !== "undefined" ? VERSION : "",
+      team: S.team, players: S.players.filter((p) => !p.ej), sessions: sin(S.sessions), partidos: sin(S.partidos), jugadas: S.jugadas || [], planes: S.planes || {}, fcf: S.fcf && S.fcf.link ? S.fcf : null, evals: conEval ? S.evals || {} : null };
+  }
+  function remap(o, map) {
+    if (Array.isArray(o)) return o.map((x) => remap(x, map));
+    if (o && typeof o === "object") { const r = {}; Object.keys(o).forEach((k) => { r[map[k] != null ? map[k] : k] = remap(o[k], map); }); return r; }
+    return typeof o === "string" && map[o] != null ? map[o] : o;
+  }
+  const isoDia = (ts) => { const d = new Date(ts); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); };
+  const normN = (s) => String(s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/\s+/g, " ").trim();
+  const soloEjemplos = (D) => D.players.every((p) => p.ej) && !D.partidos.some((m) => !m.ejemplo) && !D.sessions.some((s) => !s.ejemplo) && !(D.jugadas || []).length;
+  /* Mezcla el archivo en D (el estado de la app o una copia para contar qué entra) */
+  function equipoMezclar(D, d, actualizar) {
+    const r = { jn: 0, sn: 0, sa: 0, mn: 0, ma: 0, pn: 0, pa: 0, nuevo: soloEjemplos(D) };
+    if (r.nuevo) {
+      D.players = D.players.filter((p) => !p.ej); D.sessions = D.sessions.filter((s) => !s.ejemplo); D.partidos = D.partidos.filter((m) => !m.ejemplo); D.ejemplo = false;
+      if (d.team) D.team = Object.assign({}, D.team, d.team);
+    }
+    const map = {};
+    (d.players || []).forEach((p) => {
+      const l = D.players.find((x) => x.id === p.id) || D.players.find((x) => normN(x.nombre) === normN(p.nombre));
+      if (l) { if (l.id !== p.id) map[p.id] = l.id; if (actualizar) { l.dorsal = p.dorsal; l.pos = p.pos; } return; }
+      const c = JSON.parse(JSON.stringify(p)); delete c.ej;
+      D.players.push(c); r.jn++;
+    });
+    (d.partidos || []).forEach((m) => { if (D.partidos.some((x) => x.id === m.id)) return; const l = m.fcf && D.partidos.find((x) => x.fcf === m.fcf); if (l) map[m.id] = l.id; });
+    const R = remap({ s: d.sessions || [], m: d.partidos || [], j: d.jugadas || [], e: d.evals || {} }, map);
+    const mezcla = (dst, src) => { let n = 0, a = 0; src.forEach((x) => { const i = dst.findIndex((y) => y.id === x.id); if (i < 0) { dst.push(x); n++; } else if (actualizar && JSON.stringify(dst[i]) !== JSON.stringify(x)) { dst[i] = x; a++; } }); return [n, a]; };
+    D.jugadas = D.jugadas || [];
+    [r.sn, r.sa] = mezcla(D.sessions, R.s.map((s) => Object.assign(s, { ejemplo: false })));
+    [r.mn, r.ma] = mezcla(D.partidos, R.m);
+    [r.pn, r.pa] = mezcla(D.jugadas, R.j);
+    if (d.evals) {
+      D.evals = D.evals || {};
+      Object.keys(R.e).forEach((pid) => Object.keys(R.e[pid]).forEach((tk) => Object.keys(R.e[pid][tk]).forEach((tr) => {
+        const inc = R.e[pid][tk][tr], loc = D.evals[pid] && D.evals[pid][tk] && D.evals[pid][tk][tr];
+        if (!loc || (actualizar && (inc.ts || 0) > (loc.ts || 0))) { D.evals[pid] = D.evals[pid] || {}; D.evals[pid][tk] = D.evals[pid][tk] || {}; D.evals[pid][tk][tr] = inc; }
+      })));
+    }
+    if (d.planes) { D.planes = D.planes || {}; Object.keys(d.planes).forEach((tk) => { if (!D.planes[tk] || actualizar) D.planes[tk] = d.planes[tk]; }); }
+    if (d.fcf && !(D.fcf && D.fcf.link)) D.fcf = d.fcf;
+    return r;
+  }
+  function equipoAbrir(txt) {
+    let d = null;
+    try { d = JSON.parse(txt); } catch (e) { d = null; }
+    if (!d || d.app !== "mister") { toast("Ese archivo no es de Míster"); return; }
+    if (d.tipo !== "equipo") { copiaRestaurar(txt); return; }
+    const sim = equipoMezclar(JSON.parse(JSON.stringify(S)), d, true);
+    UI.eqin = { d, sim }; openSheet({ t: "eqin" });
+  }
+  SHEETS.eqin = () => {
+    const I = UI.eqin; if (!I) return null;
+    const d = I.d, s = I.sim, pl = (n, a, b) => n + " " + (n === 1 ? a : b);
+    const nuevos = [s.jn && pl(s.jn, "jugador", "jugadores"), s.sn && pl(s.sn, "sesión", "sesiones"), s.mn && pl(s.mn, "partido", "partidos"), s.pn && pl(s.pn, "jugada", "jugadas")].filter(Boolean);
+    const cambios = s.sa + s.ma + s.pa;
+    return { title: "Recibir equipo", body: `<p style="margin-top:0">Equipo <b>${esc(d.de || (d.team && d.team.nombre) || "")}</b>, enviado el ${esc(fFecha(isoDia(d.fecha || Date.now())))}: ${pl((d.players || []).length, "jugador", "jugadores")}, ${pl((d.sessions || []).length, "sesión", "sesiones")}, ${pl((d.partidos || []).length, "partido", "partidos")} y ${pl((d.jugadas || []).length, "jugada", "jugadas")}.</p>
+      <p>${nuevos.length ? "Se añaden: " + nuevos.join(", ") + "." : "No hay nada nuevo para añadir."}${cambios ? ` Hay ${pl(cambios, "cosa", "cosas")} que ya tienes con cambios.` : ""}</p>
+      ${s.nuevo ? '<p class="note">Se quitan los datos de ejemplo y se usa su equipo.</p>' : '<p class="muted" style="font-size:14px">No se borra nada de lo que ya tienes.</p>'}
+      <div class="row">${cambios ? `<button class="btn" data-a="eqOk" data-v="0">Solo lo nuevo</button><button class="btn primary" data-a="eqOk" data-v="1">Añadir y actualizar</button>` : `<button class="btn" data-a="closeSheet">Cancelar</button><button class="btn primary" data-a="eqOk" data-v="1"${nuevos.length ? "" : " disabled"}>Añadir</button>`}</div>` };
+  };
+  function vSegundoCard() {
+    return `<section class="card"><h2>Segundo entrenador</h2>
+      <p style="font-size:15px">Pásale el equipo a otro entrenador: plantilla, sesiones, partidos, jugadas y plan de temporada. Lo abre en su Míster y se le añade todo. Cuando cambiéis algo, volved a enviarlo: se añade lo nuevo y no se borra nada.</p>
+      <div class="chips"><button class="chip${UI.eqEval ? " on" : ""}" data-a="eqEval" aria-pressed="${!!UI.eqEval}">Incluir valoraciones de los niños</button></div>
+      <div class="row"><button class="btn primary" data-a="eqEnviar">${ic("share")} Enviar equipo</button><button class="btn" data-a="eqRecibir">Recibir equipo</button></div>
+      <input type="file" id="eqfile" data-eqfile="1" hidden aria-hidden="true" tabindex="-1"></section>`;
+  }
+  function vAvisosCard() {
+    if (!NATIVE || !NATIVE.avisos) return "";
+    const on = S.team.avisos !== false;
+    return `<section class="card"><div class="card-h"><h2>Avisos de partido</h2><button class="toggle${on ? " on" : ""}" data-a="avisosTog" aria-pressed="${on}">${on ? "Activados" : "Desactivados"}</button></div>
+      <p class="muted" style="font-size:14px;margin-bottom:0">Te avisa en el móvil dos días antes si no has enviado la convocatoria, la tarde anterior y la mañana del partido.</p></section>`;
+  }
+  /* Abrir un archivo de Míster desde WhatsApp, Drive o Descargas (Android: «Abrir con Míster») */
+  window.__misterArchivo = (txt) => { try { equipoAbrir(String(txt || "")); } catch (e) { toast("No se ha podido abrir el archivo"); } };
+
+  Object.assign(ACT, {
+    jugOpen: (d) => { UI.page = { t: "jug", id: d.id }; UI.jtr = null; render(); window.scrollTo(0, 0); },
+    jtr: (d) => { UI.jtr = d.v; const y = window.scrollY; render(); window.scrollTo(0, y); },
+    evS: (d) => {
+      const pg = UI.page; if (!pg || pg.t !== "jug") return;
+      const E = evalDe(pg.id, tempDe().k, UI.jtr || trimDe(), true), v = Number(d.v);
+      E.r[d.k] = E.r[d.k] === v ? 0 : v; E.ts = Date.now(); save();
+      const y = window.scrollY; render(); window.scrollTo(0, y);
+    },
+    infOpen: () => { const pg = UI.page; if (!pg || pg.t !== "jug") return; UI.inf = { id: pg.id, tr: UI.jtr || trimDe(), est: true, datos: true, url: "" }; openSheet({ t: "inf" }); infPreview(); },
+    infTog: (d) => { const I = UI.inf; if (!I) return; I[d.k] = !I[d.k]; renderSheet(); infPreview(); },
+    infSend: async () => {
+      const I = UI.inf, p = I && S.players.find((x) => x.id === I.id); if (!p) return;
+      const c = await infCanvas(p, I), blob = await new Promise((r) => c.toBlob(r, "image/png"));
+      const slug = normN(p.nombre).replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "jugador";
+      pzCompartir(blob, "informe-" + slug + "-" + TRIM[I.tr][2] + ".png", "Informe de " + p.nombre);
+    },
+    planOpen: () => { UI.page = { t: "plan", from: UI.page }; render(); window.scrollTo(0, 0); },
+    planMes: (d) => openSheet({ t: "planMes", k: d.v }),
+    planTog: (d) => {
+      const k = UI.sheet && UI.sheet.k; if (k == null) return;
+      planEditar((m) => { const l = m[k] = (m[k] || []).slice(), i = l.indexOf(d.v); if (i >= 0) l.splice(i, 1); else { l.push(d.v); if (l.length > 3) l.shift(); } });
+      UI.form = null; renderSheet(); const y = window.scrollY; render(); window.scrollTo(0, y);
+    },
+    planReset: () => { if (S.planes) delete S.planes[tempDe().k]; save(); UI.form = null; render(); toast("Plan propuesto según la edad"); },
+    planCrear: () => { UI.form = formDefaults(); UI.page = null; UI.tab = "crear"; render(); window.scrollTo(0, 0); },
+    avisosTog: () => { S.team.avisos = S.team.avisos === false; save(); avisosSync(true); const y = window.scrollY; render(); window.scrollTo(0, y); toast(S.team.avisos ? "Avisos activados" : "Avisos desactivados"); },
+    eqEval: () => { UI.eqEval = !UI.eqEval; const y = window.scrollY; render(); window.scrollTo(0, y); },
+    eqEnviar: () => {
+      const blob = new Blob([JSON.stringify(equipoArchivo(!!UI.eqEval))], { type: "application/json" });
+      const slug = normN(S.team.nombre).replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "equipo";
+      pzCompartir(blob, "mister-equipo-" + slug + ".json", "Equipo " + S.team.nombre);
+    },
+    eqRecibir: () => { const f = $("#eqfile"); if (f) { f.value = ""; f.click(); } },
+    eqOk: (d) => {
+      const I = UI.eqin; if (!I) return;
+      if (typeof copiaAuto === "function") copiaAuto(true);
+      const r = equipoMezclar(S, I.d, d.v === "1");
+      save(); UI.eqin = null; UI.form = null; closeSheet(); render(); avisosSync(true);
+      toast(r.jn + r.sn + r.mn + r.pn ? "Equipo recibido" : "Equipo actualizado");
+    }
   });
 
   /* Botón atrás de Android */
@@ -5401,6 +5827,7 @@ var Vision = (function () {
 
   /* Al abrir: los resultados FCF ya guardados también entran en la lista de Partidos */
   if (S.fcf && S.fcf.link && (S.fcf.partidos || []).length) { fcfMatchRecords(); save(); }
+  avisosSync(true);
   const h0 = location.hash.slice(1);
   if (TABS.indexOf(h0) >= 0) UI.tab = h0;
   render();
