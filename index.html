@@ -395,8 +395,9 @@ label.btn { cursor: pointer; }
 #vax .btn[disabled] { opacity: .45; }
 #vax .chip { background: rgba(255, 255, 255, .08); border-color: rgba(255, 255, 255, .2); color: #fff; flex-direction: row; align-items: center; gap: 8px; }
 #vax .chip.on { background: var(--accent); border-color: var(--accent); }
-.vacv { border-radius: 12px; overflow: hidden; background: #3a3f3c; touch-action: none; }
-.vacv canvas { display: block; width: 100%; touch-action: none; }
+.vacv { border-radius: 12px; overflow: hidden; background: #3a3f3c; touch-action: none; flex-shrink: 0; }
+#vax .lv > * { flex-shrink: 0; }
+.vacv canvas { display: block; width: 100%; margin: 0 auto; touch-action: none; }
 .sw { display: inline-block; width: 18px; height: 18px; border-radius: 50%; border: 2px solid #fff; }
 .check { display: flex; gap: 10px; align-items: center; font-size: 15px; }
 .check input { width: 22px; height: 22px; accent-color: var(--accent); }
@@ -408,6 +409,10 @@ svg.heat { display: block; width: 100%; height: auto; border-radius: 10px; color
 .evlist.va .vabtn { grid-column: 1 / -1; display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
 .evlist.va .vabtn .iconbtn { margin-left: auto; }
 .stat b small { font-size: .55em; font-weight: 600; }
+#vax .opt-big { display: grid; gap: 4px; text-align: left; padding: 14px 16px; border-radius: 14px; border: 1.5px solid rgba(255, 255, 255, .2); background: rgba(255, 255, 255, .06); color: #fff; }
+#vax .opt-big b { font-size: 17px; }
+#vax .opt-big span { font-size: 14px; color: rgba(255, 255, 255, .75); }
+#vax .opt-big.on { border-color: var(--accent); background: rgba(240, 86, 27, .18); }
 
 </style>
 </head>
@@ -1869,6 +1874,100 @@ var Vision = (function () {
     return [Math.round(m[0] / k), Math.round(m[1] / k), Math.round(m[2] / k)];
   }
 
+  /* El color conocido más parecido (si está claro): devuelve su número o 0 */
+  function cerca(cols, L, lim) {
+    var b = 0, bd = 1e9, sd = 1e9;
+    for (var i = 0; i < cols.length; i++) {
+      var dd = dE(L, cols[i][1]);
+      if (dd < bd) { sd = bd; bd = dd; b = cols[i][0]; } else if (dd < sd) sd = dd;
+    }
+    return bd < lim && bd < sd * 0.75 ? b : 0;
+  }
+
+  /* ---------- cámara en la mano: buscar a los porteros por el color ----------
+     Con el móvil siguiendo el balón no se puede situar a cada jugador en el campo,
+     pero si se ve a un portero, la jugada está cerca de su portería; y si está tirado, ha habido tiro. */
+  function Mano(o) {
+    this.W = o.W; this.H = o.H;
+    var cols = [[3, o.gkN], [4, o.gkR], [1, o.nos], [2, o.riv]].filter(function (c) { return c[1]; })
+      .map(function (c) { return [c[0], lab(c[1][0], c[1][1], c[1][2])]; });
+    /* tabla de colores (32 niveles por canal) para no calcular el color de cada píxel */
+    this.lut = new Uint8Array(32768);
+    for (var r = 0; r < 32; r++) for (var g = 0; g < 32; g++) for (var b = 0; b < 32; b++) {
+      var L = lab(r * 8 + 4, g * 8 + 4, b * 8 + 4), best = 0, bd = 1e9, sd = 1e9;
+      for (var i = 0; i < cols.length; i++) { var dd = dE(L, cols[i][1]); if (dd < bd) { sd = bd; bd = dd; best = cols[i][0]; } else if (dd < sd) sd = dd; }
+      this.lut[(r << 10) | (g << 5) | b] = bd < 22 && bd < sd * 0.7 ? best : 0;
+    }
+    this.cls = new Uint8Array(this.W * this.H);
+    this.vis = new Uint8Array(this.W * this.H);
+  }
+  Mano.prototype.frame = function (d) {
+    var W = this.W, H = this.H, n = W * H, cls = this.cls, vis = this.vis, lut = this.lut, p;
+    for (p = 0; p < n; p++) { var k = p * 4; cls[p] = lut[((d[k] >> 3) << 10) | ((d[k + 1] >> 3) << 5) | (d[k + 2] >> 3)]; }
+    vis.fill(0);
+    var best = {}, stack = [], minA = Math.max(20, n * 0.00008);
+    for (p = 0; p < n; p++) {
+      var c = cls[p];
+      if (c < 3 || vis[p]) continue;
+      var x0 = W, x1 = 0, y0 = H, y1 = 0, area = 0;
+      vis[p] = 1; stack.length = 0; stack.push(p);
+      while (stack.length) {
+        var q = stack.pop(), qx = q % W, qy = (q - qx) / W; area++;
+        if (qx < x0) x0 = qx; if (qx > x1) x1 = qx; if (qy < y0) y0 = qy; if (qy > y1) y1 = qy;
+        if (qx > 0 && cls[q - 1] === c && !vis[q - 1]) { vis[q - 1] = 1; stack.push(q - 1); }
+        if (qx < W - 1 && cls[q + 1] === c && !vis[q + 1]) { vis[q + 1] = 1; stack.push(q + 1); }
+        if (qy > 0 && cls[q - W] === c && !vis[q - W]) { vis[q - W] = 1; stack.push(q - W); }
+        if (qy < H - 1 && cls[q + W] === c && !vis[q + W]) { vis[q + W] = 1; stack.push(q + W); }
+      }
+      if (area < minA) continue;
+      var bw = x1 - x0 + 1, bh = y1 - y0 + 1;
+      /* una camiseta es una mancha compacta, no una línea */
+      if (area < 0.35 * bw * bh || bw > W * 0.4 || bh > H * 0.4) continue;
+      if (!best[c] || area > best[c][5]) best[c] = [c, (x0 + x1) / 2 / W, (y0 + y1) / 2 / H, bw, bh, area];
+    }
+    return Object.keys(best).map(function (k) { var b = best[k]; return [b[0], Math.round(b[1] * 100) / 100, Math.round(b[2] * 100) / 100, Math.round((b[3] / b[4]) * 100) / 100, Math.round((b[5] / n) * 100000) / 100000]; });
+  };
+  /* Tramos en los que se ve a cada portero → llegadas a cada área */
+  function tramosMano(samples, aud) {
+    var out = [], ruido = (aud && aud.ruido) || [];
+    [3, 4].forEach(function (tm) {
+      var cur = null;
+      samples.forEach(function (s) {
+        var g = s.g.find(function (x) { return x[0] === tm; });
+        if (g) {
+          if (cur && s.t - cur.t1 <= 1.6) { cur.t1 = s.t; cur.n++; if (g[3] >= 1.2) cur.tirado++; }
+          else { if (cur) out.push(cur); cur = { tm: tm, t0: s.t, t1: s.t, n: 1, tirado: g[3] >= 1.2 ? 1 : 0 }; }
+        }
+      });
+      if (cur) out.push(cur);
+    });
+    return out.filter(function (x) { return x.n >= 2 && x.t1 - x.t0 >= 0.5; }).map(function (x) {
+      var r = ruido.find(function (q) { return q[0] >= x.t0 - 3 && q[0] <= x.t1 + 2; });
+      return { tm: x.tm, t0: x.t0, t1: x.t1, tiro: x.tirado >= 2, ruido: !!r };
+    }).sort(function (a, b) { return a.t0 - b.t0; });
+  }
+  function resumenMano(samples, aud, total) {
+    var tr = tramosMano(samples, aud), dur = function (tm) { return tr.filter(function (x) { return x.tm === tm; }).reduce(function (a, x) { return a + x.t1 - x.t0 + 0.25; }, 0); };
+    return {
+      tramos: tr, total: total,
+      cercaRival: total ? Math.round((dur(4) / total) * 100) : 0, cercaPropia: total ? Math.round((dur(3) / total) * 100) : 0,
+      llegadas: [tr.filter(function (x) { return x.tm === 4; }).length, tr.filter(function (x) { return x.tm === 3; }).length],
+      tiros: [tr.filter(function (x) { return x.tm === 4 && x.tiro; }).length, tr.filter(function (x) { return x.tm === 3 && x.tiro; }).length]
+    };
+  }
+  function momentosMano(samples, aud) {
+    var tr = tramosMano(samples, aud), out = [], ruido = (aud && aud.ruido) || [];
+    tr.forEach(function (x) {
+      var nuestro = x.tm === 4;
+      out.push({ k: "area", t: Math.max(0, x.t0 - 1), dur: x.t1 - x.t0, quien: nuestro ? "nos" : "riv", tiro: x.tiro, ruido: x.ruido });
+    });
+    ruido.forEach(function (r) {
+      if (tr.some(function (x) { return r[0] >= x.t0 - 3 && r[0] <= x.t1 + 2; })) return;
+      out.push({ k: "ruido", t: r[0], s: r[1] });
+    });
+    return out.sort(function (a, b) { return a.t - b.t; });
+  }
+
   /* ---------- analizador de fotogramas ---------- */
   function Campo(o) {
     this.W = o.W; this.H = o.H;
@@ -1878,8 +1977,11 @@ var Vision = (function () {
     this.Hi = invert(this.Hm);
     this.nos = o.nos ? lab(o.nos[0], o.nos[1], o.nos[2]) : null;
     this.riv = o.riv ? lab(o.riv[0], o.riv[1], o.riv[2]) : null;
-    /* si un equipo viste de verde, no se puede descartar el color del césped al mirar las camisetas */
-    this.verde = !!((o.nos && cesped(o.nos[0], o.nos[1], o.nos[2])) || (o.riv && cesped(o.riv[0], o.riv[1], o.riv[2])));
+    /* colores conocidos: 1 tu equipo, 2 rival, 3 tu portero, 4 portero rival */
+    var cols = [[1, o.nos], [2, o.riv], [3, o.gkN], [4, o.gkR]].filter(function (c) { return c[1]; });
+    this.cols = cols.map(function (c) { return [c[0], lab(c[1][0], c[1][1], c[1][2])]; });
+    /* si alguien viste de verde, no se puede descartar el color del césped al mirar las camisetas */
+    this.verde = cols.some(function (c) { return cesped(c[1][0], c[1][1], c[1][2]); });
     var W = this.W, H = this.H, n = W * H;
     var c = apply(this.Hi, 0.5, 0.5), sw = apply(this.Hm, c[0], c[1])[2] > 0 ? 1 : -1;
     this.mask = new Uint8Array(n);
@@ -1969,7 +2071,7 @@ var Vision = (function () {
       var peso = Math.max(1, Math.min(3, Math.round(bh / (1.15 * hp))));
       for (var s = 0; s < nj; s++) {
         var sx0 = B.x0 + (bw * s) / nj, sx1 = B.x0 + (bw * (s + 1)) / nj;
-        var low = -1, sumx = 0, cnt = 0, R = 0, G = 0, Bc = 0, cc = 0, v1 = 0, v2 = 0;
+        var low = -1, sumx = 0, cnt = 0, R = 0, G = 0, Bc = 0, cc = 0, votos = [0, 0, 0, 0, 0];
         var top = B.y0 + bh * 0.12, mid = B.y0 + bh * 0.6;
         for (var j = 0; j < B.px.length; j++) {
           var pp = B.px[j], px = pp % W, py = (pp - px) / W;
@@ -1978,10 +2080,10 @@ var Vision = (function () {
           sumx += px; cnt++;
           if (py >= top && py <= mid) {
             var kk = pp * 4; R += d[kk]; G += d[kk + 1]; Bc += d[kk + 2]; cc++;
-            /* cada píxel de la camiseta vota por el equipo al que más se parece */
-            if (this.nos && this.riv && (this.verde || !cesped(d[kk], d[kk + 1], d[kk + 2]))) {
-              var Lp = lab(d[kk], d[kk + 1], d[kk + 2]), e1 = dE(Lp, this.nos), e2 = dE(Lp, this.riv);
-              if (e1 < e2 * 0.75 && e1 < 70) v1++; else if (e2 < e1 * 0.75 && e2 < 70) v2++;
+            /* cada píxel de la camiseta vota por el color conocido al que más se parece */
+            if (this.cols.length >= 2 && (this.verde || !cesped(d[kk], d[kk + 1], d[kk + 2]))) {
+              var cl = cerca(this.cols, lab(d[kk], d[kk + 1], d[kk + 2]), 70);
+              if (cl) votos[cl]++;
             }
           }
         }
@@ -1989,13 +2091,12 @@ var Vision = (function () {
         var q2 = apply(this.Hm, sumx / cnt, low + 1);
         if (q2[0] < -0.03 || q2[0] > 1.03 || q2[1] < -0.05 || q2[1] > 1.03) continue;
         var team = 0;
-        if (cc && this.nos && this.riv) {
-          var L = lab(R / cc, G / cc, Bc / cc), d1 = dE(L, this.nos), d2 = dE(L, this.riv);
-          if (v1 >= 2 && v1 >= 1.5 * v2) team = 1;
-          else if (v2 >= 2 && v2 >= 1.5 * v1) team = 2;
-          else if (d1 < d2 * 0.75 && d1 < 70) team = 1;
-          else if (d2 < d1 * 0.75 && d2 < 70) team = 2;
-          if (this.debug) this.debug.push([Math.round(R / cc), Math.round(G / cc), Math.round(Bc / cc), Math.round(d1), Math.round(d2), v1, v2, team, +q2[0].toFixed(2), +q2[1].toFixed(2), bw, bh, B.px.length]);
+        if (cc && this.cols.length >= 2) {
+          var top1 = 0, top2 = 0;
+          for (var vt = 1; vt <= 4; vt++) { if (votos[vt] > votos[top1]) { top2 = top1; top1 = vt; } else if (votos[vt] > votos[top2]) top2 = vt; }
+          if (top1 && votos[top1] >= 2 && votos[top1] >= 1.5 * votos[top2]) team = top1;
+          else team = cerca(this.cols, lab(R / cc, G / cc, Bc / cc), 70);
+          if (this.debug) this.debug.push([Math.round(R / cc), Math.round(G / cc), Math.round(Bc / cc), votos.join(","), team, +q2[0].toFixed(2), +q2[1].toFixed(2), bw, bh, B.px.length]);
         }
         pts.push([Math.max(0, Math.min(1, q2[0])), Math.max(0, Math.min(1, q2[1])), team, peso]);
       }
@@ -2005,13 +2106,15 @@ var Vision = (function () {
 
   /* ---------- sonido ---------- */
   /* Recibe [{t, db, wh}] (cada ~0,5 s del vídeo) y devuelve celebraciones y pitidos */
-  function audioEventos(bins) {
+  function audioEventos(bins, minDur) {
+    if (minDur == null) minDur = 2;
     if (!bins.length) return { ruido: [], silbato: [], ok: false };
     var ok = bins.some(function (b) { return b.db > -90; });
     if (!ok) return { ruido: [], silbato: [], ok: false };
     /* volumen por segundo */
     var sec = {}, pito = {};
-    bins.forEach(function (b) { if (b.wh >= 24 && b.wl >= -62) { pito[Math.floor(b.t)] = 1; pito[Math.floor(b.t + 0.5)] = 1; } });
+    var esPito = function (b) { return b.wh >= 26 && b.wl >= -62 && (b.wd == null || b.wd >= 6); };
+    bins.forEach(function (b) { if (esPito(b)) { pito[Math.floor(b.t)] = 1; pito[Math.floor(b.t + 0.5)] = 1; } });
     bins.forEach(function (b) { var s = Math.floor(b.t); if (pito[s]) return; sec[s] = Math.max(sec[s] == null ? -120 : sec[s], b.db); });
     var ts = Object.keys(sec).map(Number).sort(function (a, b) { return a - b; });
     var vals = ts.map(function (t) { return sec[t]; });
@@ -2024,7 +2127,7 @@ var Vision = (function () {
       if (exc[i] >= 7) {
         var j = i, mx = exc[i];
         while (j + 1 < ts.length && exc[j + 1] >= 5 && ts[j + 1] - ts[j] <= 2) { j++; mx = Math.max(mx, exc[j]); }
-        if (ts[j] - ts[i] >= 2) ruido.push([ts[i], Math.round(mx)]);
+        if (ts[j] - ts[i] >= minDur) ruido.push([ts[i], Math.round(mx)]);
         i = j + 1;
       } else i++;
     }
@@ -2035,7 +2138,7 @@ var Vision = (function () {
     /* silbatos: tono puro y fuerte entre 2 y 4,5 kHz */
     var sil = [];
     bins.forEach(function (b) {
-      if (b.wh < 24 || b.wl < -62) return;
+      if (!esPito(b)) return;
       var l = sil[sil.length - 1];
       if (l && b.t - l[1] <= 1.2) l[1] = b.t; else sil.push([b.t, b.t]);
     });
@@ -2048,7 +2151,7 @@ var Vision = (function () {
   function codificar(samples) {
     return samples.map(function (s) {
       return b36(Math.round(s.t * 2), 1) + ":" + (s.mov ? "!" : s.pts.map(function (p) {
-        var code = p[2] * 3 + (Math.min(3, p[3]) - 1), ui = Math.min(GX - 1, Math.floor(p[0] * GX)), vi = Math.min(GY - 1, Math.floor(p[1] * GY));
+        var code = Math.min(4, p[2]) * 3 + (Math.min(3, p[3]) - 1), ui = Math.min(GX - 1, Math.floor(p[0] * GX)), vi = Math.min(GY - 1, Math.floor(p[1] * GY));
         return b36((code * GX + ui) * GY + vi, 3);
       }).join(""));
     }).join(";");
@@ -2120,7 +2223,26 @@ var Vision = (function () {
     if (a == null || t < a) return false;
     return t <= a + cfg.M * 60 + Math.min(60, cfg.M * 60 * 0.08);
   }
-  function giro(cfg, p) { var f = cfg.dir < 0; if (cfg.cambio && p > cfg.P / 2) f = !f; return f; }
+  function giro(cfg, p) {
+    if (cfg.dirP && cfg.dirP[p]) return cfg.dirP[p] < 0;
+    var f = cfg.dir < 0; if (cfg.cambio && p > cfg.P / 2) f = !f; return f;
+  }
+  /* Con los porteros marcados se sabe solo hacia dónde ataca cada equipo en cada parte */
+  function dirPorteros(samples, cfg) {
+    var acc = {};
+    samples.forEach(function (s) {
+      if (s.mov || !enJuego(cfg, s.t)) return;
+      var p = parteDe(cfg, s.t);
+      s.pts.forEach(function (q) {
+        if (q[2] !== 3 && q[2] !== 4) return;
+        acc[p] = acc[p] || { a: 0, n: 0 };
+        acc[p].a += q[2] === 3 ? 0.5 - q[0] : q[0] - 0.5; acc[p].n++;
+      });
+    });
+    var out = {}, hay = false;
+    Object.keys(acc).forEach(function (p) { if (acc[p].n >= 10) { out[p] = acc[p].a > 0 ? 1 : -1; hay = true; } });
+    return hay ? out : null;
+  }
   function resumen(samples, cfg) {
     var GW = 12, GH = 8, heat = { nos: new Array(GW * GH).fill(0), riv: new Array(GW * GH).fill(0), juego: new Array(GW * GH).fill(0) };
     var n = 0, mov = 0, ter = [0, 0, 0], mitad = 0, blq = { n: 0, largo: 0, ancho: 0, altura: 0 }, partes = {}, cuentas = { nos: 0, riv: 0 };
@@ -2219,7 +2341,7 @@ var Vision = (function () {
     return out.sort(function (a, b) { return a.t - b.t; });
   }
 
-  return { homography: homography, apply: apply, invert: invert, lab: lab, dE: dE, muestra: muestra, Campo: Campo, audioEventos: audioEventos, codificar: codificar, decodificar: decodificar, saques: saques, resumen: resumen, momentos: momentos, iniciosParte: iniciosParte, parteDe: parteDe, UNIT: UNIT };
+  return { homography: homography, apply: apply, invert: invert, lab: lab, dE: dE, muestra: muestra, Campo: Campo, Mano: Mano, tramosMano: tramosMano, resumenMano: resumenMano, momentosMano: momentosMano, dirPorteros: dirPorteros, audioEventos: audioEventos, codificar: codificar, decodificar: decodificar, saques: saques, resumen: resumen, momentos: momentos, iniciosParte: iniciosParte, parteDe: parteDe, UNIT: UNIT };
 })();
 
 /* =========================================================
@@ -2898,6 +3020,7 @@ var Vision = (function () {
   const EVN = [
     ["gol", "Gol", "nos", true], ["tiro_p", "Tiro a puerta", "nos", true], ["tiro_f", "Tiro fuera", "nos", true],
     ["ocasion", "Ocasión clara", "nos", true], ["perdida", "Pérdida", "nos", true], ["recup", "Recuperación", "nos", true],
+    ["pase", "Pase", "nos", true], ["conduccion", "Conducción", "nos", true], ["regate", "Regate", "nos", true],
     ["corner", "Córner a favor", "nos", false], ["falta_r", "Falta recibida", "nos", true], ["falta_c", "Falta cometida", "nos", true],
     ["parada", "Parada", "nos", true], ["amarilla", "Amarilla", "nos", true], ["roja", "Roja", "nos", true],
     ["gol_r", "Gol rival", "riv", false], ["tiro_r", "Tiro rival a puerta", "riv", false], ["tiro_rf", "Tiro rival fuera", "riv", false], ["corner_r", "Córner en contra", "riv", false]
@@ -2905,7 +3028,8 @@ var Vision = (function () {
   const EVM = {};
   EVN.forEach((e) => { EVM[e[0]] = { n: e[1], s: e[2], j: e[3] }; });
   const STATS = [["Goles", ["gol"], ["gol_r"]], ["Tiros a puerta", ["gol", "tiro_p"], ["gol_r", "tiro_r"]], ["Tiros fuera", ["tiro_f"], ["tiro_rf"]],
-    ["Ocasiones claras", ["ocasion"], null], ["Pérdidas", ["perdida"], null], ["Recuperaciones", ["recup"], null], ["Córners", ["corner"], ["corner_r"]],
+    ["Ocasiones claras", ["ocasion"], null], ["Pérdidas", ["perdida"], null], ["Recuperaciones", ["recup"], null],
+    ["Pases", ["pase"], null], ["Conducciones", ["conduccion"], null], ["Regates", ["regate"], null], ["Córners", ["corner"], ["corner_r"]],
     ["Faltas cometidas", ["falta_c"], null], ["Faltas recibidas", ["falta_r"], null], ["Paradas", ["parada"], null], ["Tarjetas", ["amarilla", "roja"], null]];
   let lvTick = null;
 
@@ -3054,7 +3178,7 @@ var Vision = (function () {
     Object.keys(ini).map(Number).sort((a, b) => a - b).forEach((k) => { if (ini[k] <= vt) { p = k; base = ini[k]; } });
     return { p, s: Math.max(0, Math.round(base != null ? vt - base : vt)) };
   }
-  const VFIL = [["all", "Todas", null], ["gol", "Goles", ["gol", "gol_r"]], ["tiros", "Tiros", ["gol", "tiro_p", "tiro_f", "ocasion"]], ["perdida", "Pérdidas", ["perdida"]], ["recup", "Recuperaciones", ["recup"]], ["abp", "Córners y faltas", ["corner", "corner_r", "falta_r", "falta_c"]], ["rival", "Rival", ["gol_r", "tiro_r", "tiro_rf", "corner_r"]]];
+  const VFIL = [["all", "Todas", null], ["gol", "Goles", ["gol", "gol_r"]], ["tiros", "Tiros", ["gol", "tiro_p", "tiro_f", "ocasion"]], ["perdida", "Pérdidas", ["perdida"]], ["recup", "Recuperaciones", ["recup"]], ["juego", "Pases y conducciones", ["pase", "conduccion", "regate"]], ["abp", "Córners y faltas", ["corner", "corner_r", "falta_r", "falta_c"]], ["rival", "Rival", ["gol_r", "tiro_r", "tiro_rf", "corner_r"]]];
   function jugadas(m) {
     const f = VFIL.find((x) => x[0] === (UI.vfil || "all")), j = UI.vjug || "";
     return (m.ev || []).map((e) => ({ e, t: vtime(m, e) })).filter((x) => x.t != null && (!f[2] || f[2].indexOf(x.e.t) >= 0) && (!j || x.e.j === j)).sort((a, b) => a.t - b.t);
@@ -3150,13 +3274,18 @@ var Vision = (function () {
     let raw = null;
     try { raw = JSON.parse(localStorage.getItem(VAK(m)) || "null"); } catch (e) { raw = null; }
     if (!raw) return null;
-    const samples = Vision.decodificar(raw.s);
-    vaCache = { id: m.id, ts: a.ts, samples, aud: raw.a || { ruido: [], silbato: [], ok: false }, sq: Vision.saques(samples) };
+    const aud = raw.a || { ruido: [], silbato: [], ok: false };
+    if (raw.modo === "mano") vaCache = { id: m.id, ts: a.ts, modo: "mano", samples: raw.g || [], total: raw.total || 0, aud, sq: [] };
+    else { const samples = Vision.decodificar(raw.s); vaCache = { id: m.id, ts: a.ts, modo: "fijo", samples, aud, sq: Vision.saques(samples) }; }
     return vaCache;
   }
   function vaCfg(m) {
     const v = vivo(m), c = m.video.cal || {}, md = medidas();
-    return { ini: m.video.ini || {}, P: v.P, M: v.M, dir: c.dir || 1, cambio: c.cambio !== false, largo: md[0], ancho: md[1] };
+    const cfg = { ini: m.video.ini || {}, P: v.P, M: v.M, dir: c.dir || 1, cambio: c.cambio !== false, largo: md[0], ancho: md[1] };
+    /* con los porteros marcados, la dirección de cada parte sale sola */
+    const D = vaData(m);
+    if (D && D.modo === "fijo" && (c.gkN || c.gkR)) cfg.dirP = Vision.dirPorteros(D.samples, cfg);
+    return cfg;
   }
   /* Lectura para el entrenador a partir de los números del vídeo */
   function vaLectura(r, cfg) {
@@ -3192,12 +3321,35 @@ var Vision = (function () {
       <g fill="none" stroke="rgba(255,255,255,.85)" stroke-width=".6"><rect x="0" y="0" width="120" height="80"/><line x1="60" y1="0" x2="60" y2="80"/><circle cx="60" cy="40" r="9"/><rect x="0" y="20" width="16" height="40"/><rect x="104" y="20" width="16" height="40"/><rect x="-2" y="34" width="2" height="12"/><rect x="120" y="34" width="2" height="12"/></g>
       <text x="60" y="89" text-anchor="middle" font-size="6" fill="currentColor">Atacáis hacia aquí →</text></svg>`;
   }
+  const momBtns = (x, key) => {
+    const b = (v, l) => `<button class="btn sm" data-a="vaTag" data-k="${key}" data-t="${x.t}" data-v="${v}">${l}</button>`;
+    const l = x.k === "area" && x.quien === "nos" ? [["gol", "Gol"], ["tiro_p", "Tiro a puerta"], ["tiro_f", "Tiro fuera"], ["ocasion", "Ocasión"]]
+      : x.k === "area" ? [["gol_r", "Gol rival"], ["tiro_r", "Tiro a puerta"], ["tiro_rf", "Tiro fuera"], ["parada", "Parada"]]
+      : [["gol", "Gol nuestro"], ["gol_r", "Gol rival"], ["ocasion", "Ocasión"]];
+    return `<span class="vabtn">${l.map((y) => b(y[0], y[1])).join("")}<button class="iconbtn sm" data-a="vaDis" data-k="${key}" aria-label="Descartar">${ic("close")}</button></span>`;
+  };
+  function vaHtmlMano(m, D) {
+    const c = m.video.cal || {}, r = Vision.resumenMano(D.samples, D.aud, D.total);
+    const mom = Vision.momentosMano(D.samples, D.aud).filter((x) => (m.video.hecho || []).indexOf(x.k + ":" + Math.round(x.t)) < 0);
+    const st = (n, l) => `<div class="stat"><b>${n}</b><span>${l}</span></div>`;
+    const lbl = (x) => x.k === "ruido" ? "Mucho jaleo: ¿gol u ocasión?"
+      : x.quien === "nos" ? (x.tiro ? "Posible tiro a puerta tuyo (el portero rival se tira)" : x.ruido ? "Llegada al área rival con jaleo: ¿ocasión?" : "Llegada al área rival")
+      : (x.tiro ? "Posible tiro a puerta del rival (tu portero se tira)" : x.ruido ? "Llegada del rival a tu área con jaleo" : "Llegada del rival a tu área");
+    return `<div class="card-h"><h2>Análisis automático</h2><button class="btn sm" data-a="vaOpen">Repetir</button></div>
+      <p class="muted" style="font-size:14px">Vídeo grabado con el móvil en la mano: Míster se fija en los porteros para saber cuándo llega la jugada a cada área y si se tiran.</p>
+      <div class="stats" style="grid-template-columns:repeat(2,1fr)">${c.gkR ? st(r.llegadas[0] + (r.tiros[0] ? ` <small>· ${r.tiros[0]} tiro${r.tiros[0] > 1 ? "s" : ""}</small>` : ""), "Llegadas al área rival") : ""}${c.gkN ? st(r.llegadas[1] + (r.tiros[1] ? ` <small>· ${r.tiros[1]} tiro${r.tiros[1] > 1 ? "s" : ""}</small>` : ""), "Llegadas del rival a tu área") : ""}</div>
+      <div class="kv"><b>Momentos para revisar</b>${mom.length ? `<ul class="evlist va">${mom.map((x) => { const key = x.k + ":" + Math.round(x.t); return `<li><button class="link num" data-a="vgo" data-t="${x.t}">${hms(x.t)}</button><span>${lbl(x)}</span>${momBtns(x, key)}</li>`; }).join("")}</ul>` : `<p class="muted" style="font-size:14px">No hay momentos pendientes.</p>`}</div>
+      ${!c.gkN || !c.gkR ? `<p class="note">Solo has marcado ${c.gkN ? "tu portero" : "el portero rival"}: ${c.gkN ? "no se verán tus llegadas al área rival" : "no se verán las llegadas del rival a tu área"}. Repite y toca también ${c.gkN ? "al portero rival" : "a tu portero"} si sale en el vídeo.</p>` : ""}
+      ${!D.aud.ok ? `<p class="note">No se ha podido escuchar el audio del vídeo.</p>` : ""}
+      <p class="muted" style="font-size:13px">Pases, conducciones y recuperaciones no se pueden detectar solos con un vídeo grabado a mano: márcalos con los botones de arriba mientras lo ves (puedes ponerlo a 0,5×).</p>`;
+  }
   function vaHtml(m) {
     const a = m.video.auto, D = vaData(m);
     if (!a || !D) return `<div class="card-h"><h2>Análisis automático</h2><span class="tag">Beta</span></div>
-      <p>Míster mira el vídeo dentro del móvil, sin internet y gratis: dónde se juega, cómo de junto está tu equipo, los saques de centro (posibles goles) y los momentos con más ruido.</p>
-      <p class="muted" style="font-size:14px">Funciona con el móvil quieto (en trípode) y viendo todo el campo. Tarda más o menos una cuarta parte de lo que dura el vídeo.</p>
+      <p>Míster mira el vídeo dentro del móvil, sin internet y gratis, y te propone los momentos importantes para que los confirmes con un toque.</p>
+      <ul class="pts"><li><b>Grabado con el móvil en la mano</b> (siguiendo el balón): tocas la camiseta de cada portero y detecta las llegadas a cada área y cuándo el portero se tira (posibles tiros).</li><li><b>Con el móvil fijo en trípode</b> viendo todo el campo: además, mapas de calor, tiempo en cada zona, largo y ancho del equipo y saques de centro (posibles goles).</li></ul>
       <button class="btn primary" data-a="vaOpen">Analizar el vídeo</button>`;
+    if (D.modo === "mano") return vaHtmlMano(m, D);
     const cfg = vaCfg(m), r = Vision.resumen(D.samples, cfg), lec = vaLectura(r, cfg);
     const mom = Vision.momentos(D.samples, D.sq, D.aud, cfg).filter((x) => (m.video.hecho || []).indexOf(x.k + ":" + Math.round(x.t)) < 0);
     const tab = UI.vamap || (r.porEquipo[0] > 0.5 ? "nos" : "juego");
@@ -3215,7 +3367,7 @@ var Vision = (function () {
       <div class="kv"><b>Momentos para revisar</b>${mom.length ? `<ul class="evlist va">${mom.map((x) => {
         const key = x.k + ":" + Math.round(x.t);
         const lbl = x.k === "gol" ? (x.quien === "nos" ? "Posible gol tuyo" : x.quien === "riv" ? "Posible gol del rival" : "Posible gol") + (x.fuerte ? " · celebración" : " · saque de centro después") : "Mucho ruido: ¿gol u ocasión?";
-        return `<li><button class="link num" data-a="vgo" data-t="${x.t}">${hms(x.t)}</button><span>${lbl}</span><span class="vabtn"><button class="btn sm" data-a="vaTag" data-k="${key}" data-t="${x.t}" data-v="gol">Gol nuestro</button><button class="btn sm" data-a="vaTag" data-k="${key}" data-t="${x.t}" data-v="gol_r">Gol rival</button><button class="btn sm" data-a="vaTag" data-k="${key}" data-t="${x.t}" data-v="ocasion">Ocasión</button><button class="iconbtn sm" data-a="vaDis" data-k="${key}" aria-label="Descartar">${ic("close")}</button></span></li>`;
+        return `<li><button class="link num" data-a="vgo" data-t="${x.t}">${hms(x.t)}</button><span>${lbl}</span>${momBtns(x, key)}</li>`;
       }).join("")}</ul>` : `<p class="muted" style="font-size:14px">No hay momentos pendientes.</p>`}</div>
       ${!D.aud.ok ? `<p class="note">No se ha podido escuchar el audio del vídeo: los momentos salen solo de los saques de centro.</p>` : ""}
       ${r.porEquipo[0] < 0.5 ? `<p class="note">Casi no distingo las camisetas de los dos equipos: repite el análisis y toca bien una camiseta de cada equipo (mejor de un jugador cercano).</p>` : ""}
@@ -3224,7 +3376,7 @@ var Vision = (function () {
       <p class="muted" style="font-size:13px">Análisis automático aproximado (las medidas, calculadas para un campo de ${cfg.largo}×${cfg.ancho} m): confírmalo viendo el vídeo. No reconoce a cada jugador ni cuenta pases.</p>`;
   }
   function vaSugIni(m) {
-    const D = vaData(m); if (!D) return null;
+    const D = vaData(m); if (!D || D.modo !== "fijo") return null;
     const v = vivo(m), sug = Vision.iniciosParte(D.sq, D.aud, v.P, v.M), ini = m.video.ini || {};
     if (!sug.length) return null;
     const igual = sug.every((t, i) => ini[i + 1] != null && Math.abs(ini[i + 1] - t) <= 3);
@@ -3248,7 +3400,11 @@ var Vision = (function () {
   }
   function vaDraw() {
     const A = UI.va, cv = $("#vacv"); if (!A || !cv) return;
-    const dpr = window.devicePixelRatio || 1, w = cv.clientWidth || 360;
+    /* que la imagen quepa en pantalla aunque el vídeo sea vertical */
+    const dpr = window.devicePixelRatio || 1, full = (cv.parentNode && cv.parentNode.clientWidth) || 360;
+    const alto = (full / (1 + 2 * VMX)) * (A.vh / A.vw) * (1 + 2 * VMY), maxH = Math.max(260, window.innerHeight * 0.55);
+    const w = alto > maxH ? full * (maxH / alto) : full;
+    cv.style.width = w + "px";
     cv.width = Math.round(w * dpr);
     const g = vaGeom(cv); cv.height = Math.round(g.ch);
     const c = cv.getContext("2d");
@@ -3274,7 +3430,7 @@ var Vision = (function () {
       c.fillStyle = "#f0561b"; c.beginPath(); c.arc(q[0], q[1], 13 * dpr, 0, Math.PI * 2); c.fill();
       c.fillStyle = "#fff"; c.font = `bold ${14 * dpr}px system-ui,sans-serif`; c.textAlign = "center"; c.textBaseline = "middle"; c.fillText(String(i + 1), q[0], q[1] + dpr);
     });
-    [["nos", "Tú"], ["riv", "Rival"]].forEach((x) => {
+    [["nos", "Tú"], ["riv", "Rival"], ["gkN", "Tu portero"], ["gkR", "Portero rival"]].forEach((x) => {
       const s = A.cal[x[0] + "P"]; if (!s || A.step !== "col") return;
       const q = P(s), col = A.cal[x[0]];
       c.fillStyle = `rgb(${col[0]},${col[1]},${col[2]})`; c.strokeStyle = "#fff"; c.lineWidth = 3 * dpr;
@@ -3302,7 +3458,8 @@ var Vision = (function () {
       const sw = A.snap.width, sh = A.snap.height, data = A.snap.getContext("2d").getImageData(0, 0, sw, sh).data;
       const col = Vision.muestra(data, sw, sh, nx * sw, ny * sh, 3);
       A.cal[A.colFor] = col; A.cal[A.colFor + "P"] = [nx, ny];
-      if (A.colFor === "nos" && !A.cal.riv) A.colFor = "riv";
+      const orden = A.modo === "mano" ? ["gkN", "gkR"] : ["nos", "riv", "gkN", "gkR"], sig = orden.find((k) => !A.cal[k]);
+      if (sig) A.colFor = sig;
       vaRender();
     }
   }
@@ -3326,22 +3483,37 @@ var Vision = (function () {
     document.body.classList.toggle("lock", !!A || !!UI.sheet || !!UI.live);
     if (!A) { box.innerHTML = ""; return; }
     if (A.step === "run") return;
-    const n = { esq: 1, col: 2, dir: 3 }[A.step];
-    const top = `<div class="lv-top"><button class="iconbtn" data-a="vaClose" aria-label="Cerrar">${ic("close")}</button><span>Analizar vídeo · paso ${n} de 3</span></div>`;
+    const pasos = A.modo === "mano" ? ["modo", "col"] : ["modo", "esq", "col", "dir"], n = pasos.indexOf(A.step) + 1;
+    const top = `<div class="lv-top"><button class="iconbtn" data-a="vaClose" aria-label="Cerrar">${ic("close")}</button><span>Analizar vídeo · paso ${n} de ${pasos.length}</span></div>`;
+    const sw = (k) => (A.cal[k] ? `<span class="sw" style="background:rgb(${A.cal[k].join(",")})"></span>` : "");
+    const nav = `<button class="btn" data-a="vaFrame" data-d="-1">← Imagen anterior</button><button class="btn" data-a="vaFrame" data-d="1">Imagen siguiente →</button>`;
     let body = "";
-    if (A.step === "esq") body = `<h2>Marca el campo</h2><p>Toca las <b>4 esquinas</b> en este orden: <b>1</b> lejana izquierda, <b>2</b> lejana derecha, <b>3</b> cercana derecha y <b>4</b> cercana izquierda. Si una esquina queda fuera de la imagen, tócala en la zona gris donde estaría. Puedes arrastrar los puntos.</p>
+    if (A.step === "modo") body = `<h2>¿Cómo está grabado?</h2>
+      <button class="opt-big${A.modo === "mano" ? " on" : ""}" data-a="vaModo" data-v="mano"><b>Con el móvil en la mano</b><span>Siguiendo el balón, acercando y alejando. Míster se fija en los porteros: llegadas a cada área y cuándo se tiran (posibles tiros).</span></button>
+      <button class="opt-big${A.modo === "fijo" ? " on" : ""}" data-a="vaModo" data-v="fijo"><b>Con el móvil fijo en trípode</b><span>Viendo todo el campo sin mover la cámara. Además: mapas de calor, zonas, largo y ancho del equipo y saques de centro.</span></button>
+      <p class="muted">Pases, conducciones y recuperaciones no se detectan solos: márcalos con los botones mientras ves el vídeo.</p>
+      <button class="btn primary big" data-a="vaStep" data-v="${A.modo === "mano" ? "col" : "esq"}">Siguiente</button>`;
+    else if (A.step === "esq") body = `<h2>Marca el campo</h2><p>Toca las <b>4 esquinas</b> en este orden: <b>1</b> lejana izquierda, <b>2</b> lejana derecha, <b>3</b> cercana derecha y <b>4</b> cercana izquierda. Si una esquina queda fuera de la imagen, tócala en la zona gris donde estaría. Puedes arrastrar los puntos.</p>
       <div class="vacv"><canvas id="vacv" aria-label="Imagen del campo para marcar las esquinas"></canvas></div>
       <p class="muted">La línea discontinua debe caer sobre la línea del medio campo. Si no, ajusta los puntos.</p>
-      <div class="row"><button class="btn" data-a="vaFrame">Otra imagen</button><button class="btn" data-a="vaReset">Borrar puntos</button></div>
+      <div class="row">${nav}</div><div class="row"><button class="btn" data-a="vaReset">Borrar puntos</button><button class="btn" data-a="vaStep" data-v="modo">Volver</button></div>
       <button class="btn primary big" id="vanext" data-a="vaStep" data-v="col"${A.cal.pts.length < 4 ? " disabled" : ""}>Siguiente</button>`;
-    else if (A.step === "col") body = `<h2>Colores de las camisetas</h2><p>Toca la camiseta de un jugador de <b>${A.colFor === "nos" ? "tu equipo" : "el rival"}</b>. Mejor uno cercano y bien visible.</p>
-      <div class="chips"><button class="chip${A.colFor === "nos" ? " on" : ""}" data-a="vaCol" data-v="nos">${A.cal.nos ? `<span class="sw" style="background:rgb(${A.cal.nos.join(",")})"></span>` : ""}Tu equipo</button><button class="chip${A.colFor === "riv" ? " on" : ""}" data-a="vaCol" data-v="riv">${A.cal.riv ? `<span class="sw" style="background:rgb(${A.cal.riv.join(",")})"></span>` : ""}Rival</button></div>
-      <div class="vacv"><canvas id="vacv" aria-label="Imagen del campo para tocar las camisetas"></canvas></div>
-      <div class="row"><button class="btn" data-a="vaStep" data-v="esq">Volver</button><button class="btn" data-a="vaFrame">Otra imagen</button></div>
-      <button class="btn primary big" data-a="vaStep" data-v="dir"${A.cal.nos && A.cal.riv ? "" : " disabled"}>Siguiente</button>`;
-    else if (A.step === "dir") {
-      const v = vivo(curM()), ini = curM().video.ini || {};
-      body = `<h2>¿Hacia dónde atacáis?</h2><p>En la <b>1ª parte</b>, tu equipo ataca hacia la portería de la…</p>
+    else if (A.step === "col") {
+      const mano = A.modo === "mano", quien = { nos: "un jugador de tu equipo", riv: "un jugador del rival", gkN: "tu portero", gkR: "el portero rival" }[A.colFor];
+      const ok = mano ? !!(A.cal.gkN || A.cal.gkR) : !!(A.cal.nos && A.cal.riv);
+      const chips = (mano ? [["gkN", "Tu portero"], ["gkR", "Portero rival"]] : [["nos", "Tu equipo"], ["riv", "Rival"], ["gkN", "Tu portero"], ["gkR", "Portero rival"]])
+        .map((x) => `<button class="chip${A.colFor === x[0] ? " on" : ""}" data-a="vaCol" data-v="${x[0]}">${sw(x[0])}${x[1]}</button>`).join("");
+      body = `<h2>${mano ? "Camisetas de los porteros" : "Colores de las camisetas"}</h2>
+        <p>Elige arriba de quién es y toca en la imagen la camiseta de <b>${quien}</b>. ${mano ? "Si un portero no sale en esta imagen, busca otra con los botones." : "Los porteros son opcionales: si los marcas, Míster sabe solo hacia dónde ataca cada equipo."}</p>
+        <div class="chips">${chips}</div>
+        <div class="vacv"><canvas id="vacv" aria-label="Imagen del vídeo para tocar las camisetas"></canvas></div>
+        <div class="row">${nav}</div>
+        <div class="row"><button class="btn" data-a="vaStep" data-v="${mano ? "modo" : "esq"}">Volver</button>${A.cal[A.colFor] ? `<button class="btn" data-a="vaColDel">Quitar este color</button>` : ""}</div>
+        ${mano ? `<button class="btn primary big" data-a="vaGo"${ok ? "" : " disabled"}>${ic("play")} Analizar ahora</button><p class="muted">Deja la app abierta y la pantalla encendida mientras analiza.</p>`
+          : `<button class="btn primary big" data-a="vaStep" data-v="dir"${ok ? "" : " disabled"}>Siguiente</button>`}`;
+    } else if (A.step === "dir") {
+      const v = vivo(curM()), ini = curM().video.ini || {}, auto = A.cal.gkN || A.cal.gkR;
+      body = `<h2>¿Hacia dónde atacáis?</h2>${auto ? `<p class="note">Has marcado ${A.cal.gkN && A.cal.gkR ? "los porteros" : "un portero"}: Míster sabrá solo hacia dónde atacáis en cada parte. Esto solo se usa si no los ve.</p>` : ""}<p>En la <b>1ª parte</b>, tu equipo ataca hacia la portería de la…</p>
         <div class="chips"><button class="chip${A.cal.dir === -1 ? " on" : ""}" data-a="vaDir" data-v="-1">← Izquierda</button><button class="chip${A.cal.dir === 1 ? " on" : ""}" data-a="vaDir" data-v="1">Derecha →</button></div>
         <label class="check"><input type="checkbox" data-vacambio="1"${A.cal.cambio !== false ? " checked" : ""}> Cambiáis de campo en el descanso (después de la parte ${Math.ceil(v.P / 2)})</label>
         ${Object.keys(ini).length ? `<p class="muted">Se analizan las ${Object.keys(ini).length} partes que has marcado.</p>` : `<p class="note">Todavía no has marcado el inicio de cada parte: se analizará el vídeo entero y después Míster te propondrá dónde empieza cada parte.</p>`}
@@ -3374,7 +3546,7 @@ var Vision = (function () {
   /* Empieza dentro del toque (iPhone solo deja reproducir con sonido así) */
   function vaStart() {
     const A = UI.va, m = curM(); if (!A || !m || !UI.vid) return;
-    m.video.cal = { pts: A.cal.pts, nos: A.cal.nos, riv: A.cal.riv, nosP: A.cal.nosP, rivP: A.cal.rivP, dir: A.cal.dir, cambio: A.cal.cambio !== false };
+    m.video.cal = { modo: A.modo, pts: A.cal.pts, nos: A.cal.nos, riv: A.cal.riv, nosP: A.cal.nosP, rivP: A.cal.rivP, gkN: A.cal.gkN, gkR: A.cal.gkR, gkNP: A.cal.gkNP, gkRP: A.cal.gkRP, dir: A.cal.dir, cambio: A.cal.cambio !== false };
     save();
     const mv = $("#vid"); if (mv) mv.pause();
     A.step = "run"; A.cancel = false;
@@ -3382,7 +3554,7 @@ var Vision = (function () {
     box.innerHTML = `<div class="lv vax" role="dialog" aria-label="Analizando el vídeo"><div class="lv-top"><span>Analizando el vídeo</span></div>
       <h2>Analizando…</h2><div class="vaprev"><video id="vavid" playsinline preload="auto"></video><canvas id="vaov"></canvas></div>
       <div class="lv-bar"><i id="vabar" style="width:0%"></i></div><p id="vatxt" class="lv-rest">Preparando…</p>
-      <p class="muted" style="color:rgba(255,255,255,.7)">Deja la app abierta y la pantalla encendida. Los puntos naranjas son tu equipo y los azules el rival.</p>
+      <p class="muted" style="color:rgba(255,255,255,.7)">Deja la app abierta y la pantalla encendida. ${A.modo === "mano" ? "El cuadro naranja marca a tu portero y el azul al portero rival cuando aparecen." : "Los puntos naranjas son tu equipo, los azules el rival y los amarillos los porteros."}</p>
       <button class="btn big" data-a="vaCancel">Cancelar</button></div>`;
     const v = $("#vavid");
     v.src = UI.vid.url;
@@ -3390,12 +3562,92 @@ var Vision = (function () {
     try { ac = new (window.AudioContext || window.webkitAudioContext)(); ac.resume().catch(() => {}); } catch (e) { ac = null; }
     v.play().then(() => v.pause()).catch(() => {});
     keepOn(true);
-    vaRun(m, v, ac).catch((e) => { toast("No se ha podido analizar: " + (e && e.message ? e.message : e)); }).finally(() => {
+    (A.modo === "mano" ? vaRunMano(m, v, ac) : vaRun(m, v, ac)).catch((e) => { toast("No se ha podido analizar: " + (e && e.message ? e.message : e)); }).finally(() => {
       keepOn(false);
       try { v.pause(); v.removeAttribute("src"); v.load(); } catch (e) { /* nada */ }
       try { if (ac) ac.close(); } catch (e) { /* nada */ }
       UI.va = null; vaRender(); render();
     });
+  }
+  /* Sonido del vídeo mientras se reproduce: volumen y posibles silbatos */
+  function vaOido(v, ac) {
+    if (!ac) return null;
+    try {
+      const src = ac.createMediaElementSource(v), g = ac.createGain(), an = ac.createAnalyser();
+      an.fftSize = 2048; an.smoothingTimeConstant = 0; g.gain.value = 0;
+      src.connect(an); an.connect(g); g.connect(ac.destination);
+      const td = new Float32Array(an.fftSize), fd = new Float32Array(an.frequencyBinCount), hz = ac.sampleRate / an.fftSize, bins = {};
+      return {
+        bins,
+        oir(t) {
+          an.getFloatTimeDomainData(td);
+          let s = 0; for (let i = 0; i < td.length; i++) s += td[i] * td[i];
+          const db = 10 * Math.log10(s / td.length + 1e-12);
+          an.getFloatFrequencyData(fd);
+          const fv = (i) => (isFinite(fd[i]) ? fd[i] : -200);
+          let mx = -200, lo = -200;
+          for (let i = Math.floor(2500 / hz); i <= Math.ceil(4500 / hz); i++) mx = Math.max(mx, fv(i));
+          for (let i = Math.floor(300 / hz); i <= Math.ceil(2200 / hz); i++) lo = Math.max(lo, fv(i));
+          const ref = []; for (let j = Math.floor(300 / hz); j <= Math.ceil(8000 / hz); j += 2) ref.push(fv(j));
+          ref.sort((a, b) => a - b);
+          const k = Math.floor(t * 2) / 2, b = bins[k] || (bins[k] = { t: k, db: -120, wh: 0, wl: -200, wd: -100 });
+          b.db = Math.max(b.db, db); b.wh = Math.max(b.wh, mx - ref[ref.length >> 1]); b.wl = Math.max(b.wl, mx); b.wd = Math.max(b.wd, mx - lo);
+        },
+        eventos(minDur) { return Vision.audioEventos(Object.keys(bins).map((k) => bins[k]).sort((a, b) => a.t - b.t), minDur); }
+      };
+    } catch (e) { return null; }
+  }
+  /* Vídeo grabado a mano: buscar a los porteros fotograma a fotograma (4 por segundo) */
+  async function vaRunMano(m, v, ac) {
+    const A = UI.va, txt = (s) => { const e = $("#vatxt"); if (e) e.textContent = s; };
+    if (!(v.readyState >= 1)) await once(v, "loadedmetadata", 15000);
+    if (!v.videoWidth) throw new Error("el vídeo no se puede leer");
+    const cal = m.video.cal, port = v.videoHeight > v.videoWidth;
+    const W = port ? 360 : 640, H = Math.round((W * v.videoHeight) / v.videoWidth);
+    const mano = new Vision.Mano({ W, H, gkN: cal.gkN, gkR: cal.gkR });
+    const cv = document.createElement("canvas"); cv.width = W; cv.height = H;
+    const cx = cv.getContext("2d", { willReadFrequently: true });
+    const ov = $("#vaov"); if (ov) { ov.width = W; ov.height = H; }
+    const oc = ov ? ov.getContext("2d") : null;
+    const segs = vaSegs(m, v.duration), total = segs.reduce((a, s) => a + s[1] - s[0], 0);
+    const oido = vaOido(v, ac); if (ac) { try { await ac.resume(); } catch (e) { /* nada */ } }
+    const samples = []; let hecho = 0, n = 0;
+    for (const s of segs) {
+      if (A.cancel) break;
+      await vaSeek(v, s[0]);
+      v.playbackRate = 4;
+      try { await v.play(); } catch (e) { v.muted = true; await v.play(); }
+      let next = s[0], last = v.currentTime, quieto = 0;
+      while (!A.cancel && !v.ended && v.currentTime < s[1]) {
+        await dormir(30);
+        const t = v.currentTime;
+        if (oido && !v.paused) oido.oir(t);
+        if (t >= next) {
+          next = Math.floor(t * 4) / 4 + 0.25; n++;
+          cx.drawImage(v, 0, 0, W, H);
+          const g = mano.frame(cx.getImageData(0, 0, W, H).data);
+          if (g.length) samples.push({ t: Math.round(t * 4) / 4, g });
+          if (oc) {
+            oc.clearRect(0, 0, W, H);
+            g.forEach((q) => { oc.strokeStyle = q[0] === 3 ? "#f0561b" : "#3b6fd8"; oc.lineWidth = 3; oc.strokeRect(q[1] * W - 14, q[2] * H - 14, 28, 28); });
+          }
+        }
+        if (Math.abs(t - last) < 0.01) { if (++quieto > 200) { v.play().catch(() => {}); if (quieto > 500) break; } } else { quieto = 0; last = t; }
+        if (v.paused && !v.ended) v.play().catch(() => {});
+        const pc = Math.min(100, ((hecho + Math.max(0, t - s[0])) / total) * 100);
+        const bar = $("#vabar"); if (bar) bar.style.width = pc.toFixed(1) + "%";
+        txt(hms(t) + " de " + hms(segs[segs.length - 1][1]) + " · " + Math.round(pc) + "%");
+      }
+      v.pause();
+      hecho += s[1] - s[0];
+    }
+    if (A.cancel) { toast("Análisis cancelado"); return; }
+    const aud = oido ? oido.eventos(1) : { ruido: [], silbato: [], ok: false };
+    localStorage.setItem(VAK(m), JSON.stringify({ modo: "mano", g: samples, a: aud, total: Math.round(total) }));
+    m.video.auto = { ts: Date.now(), modo: "mano", n, audio: aud.ok, dur: Math.round(total) };
+    m.video.hecho = [];
+    save();
+    toast("Análisis terminado");
   }
   async function vaRun(m, v, ac) {
     const A = UI.va, txt = (s) => { const e = $("#vatxt"); if (e) e.textContent = s; };
@@ -3403,7 +3655,7 @@ var Vision = (function () {
     if (!v.videoWidth) throw new Error("el vídeo no se puede leer");
     const dur = v.duration, W = 480, H = Math.round((W * v.videoHeight) / v.videoWidth), md = medidas();
     const cal = m.video.cal;
-    const campo = new Vision.Campo({ W, H, pts: cal.pts.map((p) => [p[0] * W, p[1] * H]), nos: cal.nos, riv: cal.riv, largo: md[0], ancho: md[1] });
+    const campo = new Vision.Campo({ W, H, pts: cal.pts.map((p) => [p[0] * W, p[1] * H]), nos: cal.nos, riv: cal.riv, gkN: cal.gkN, gkR: cal.gkR, largo: md[0], ancho: md[1] });
     const cv = document.createElement("canvas"); cv.width = W; cv.height = H;
     const cx = cv.getContext("2d", { willReadFrequently: true });
     const ov = $("#vaov"); if (ov) { ov.width = W; ov.height = H; }
@@ -3421,28 +3673,7 @@ var Vision = (function () {
     if (A.cancel) return;
     campo.fondo(frames);
     /* 2. Sonido */
-    let an = null, td = null, fd = null, hz = 0;
-    if (ac) {
-      try {
-        const src = ac.createMediaElementSource(v), g = ac.createGain();
-        an = ac.createAnalyser(); an.fftSize = 2048; an.smoothingTimeConstant = 0; g.gain.value = 0;
-        src.connect(an); an.connect(g); g.connect(ac.destination);
-        td = new Float32Array(an.fftSize); fd = new Float32Array(an.frequencyBinCount); hz = ac.sampleRate / an.fftSize;
-        await ac.resume();
-      } catch (e) { an = null; }
-    }
-    const bins = {}, oir = (t) => {
-      an.getFloatTimeDomainData(td);
-      let s = 0; for (let i = 0; i < td.length; i++) s += td[i] * td[i];
-      const db = 10 * Math.log10(s / td.length + 1e-12);
-      an.getFloatFrequencyData(fd);
-      const fv = (i) => (isFinite(fd[i]) ? fd[i] : -200);
-      let mx = -200; for (let i = Math.floor(2000 / hz); i <= Math.ceil(4500 / hz); i++) mx = Math.max(mx, fv(i));
-      const ref = []; for (let j = Math.floor(300 / hz); j <= Math.ceil(8000 / hz); j += 2) ref.push(fv(j));
-      ref.sort((a, b) => a - b);
-      const k = Math.floor(t * 2) / 2, b = bins[k] || (bins[k] = { t: k, db: -120, wh: 0, wl: -200 });
-      b.db = Math.max(b.db, db); b.wh = Math.max(b.wh, mx - ref[ref.length >> 1]); b.wl = Math.max(b.wl, mx);
-    };
+    const oido = vaOido(v, ac); if (ac) { try { await ac.resume(); } catch (e) { /* nada */ } }
     /* 3. Pasada rápida por el vídeo */
     const samples = [];
     let hecho = 0;
@@ -3455,7 +3686,7 @@ var Vision = (function () {
       while (!A.cancel && !v.ended && v.currentTime < s[1]) {
         await dormir(40);
         const t = v.currentTime;
-        if (an && !v.paused) oir(t);
+        if (oido && !v.paused) oido.oir(t);
         if (t >= next) {
           next = Math.floor(t) + 1;
           cx.drawImage(v, 0, 0, W, H);
@@ -3463,7 +3694,7 @@ var Vision = (function () {
           samples.push({ t: Math.round(t * 2) / 2, pts: r.pts, mov: r.movida });
           if (oc) {
             oc.clearRect(0, 0, W, H);
-            r.pts.forEach((p) => { const q = Vision.apply(campo.Hi, p[0], p[1]); oc.fillStyle = p[2] === 1 ? "#f0561b" : p[2] === 2 ? "#3b6fd8" : "#ddd"; oc.beginPath(); oc.arc(q[0], q[1], 4, 0, 7); oc.fill(); });
+            r.pts.forEach((p) => { const q = Vision.apply(campo.Hi, p[0], p[1]); oc.fillStyle = p[2] === 1 ? "#f0561b" : p[2] === 2 ? "#3b6fd8" : p[2] >= 3 ? "#ffd23f" : "#ddd"; oc.beginPath(); oc.arc(q[0], q[1], 4, 0, 7); oc.fill(); });
           }
         }
         if (Math.abs(t - last) < 0.01) { if (++quieto > 150) { v.play().catch(() => {}); if (quieto > 400) break; } } else { quieto = 0; last = t; }
@@ -3477,11 +3708,11 @@ var Vision = (function () {
     }
     if (A.cancel) { toast("Análisis cancelado"); return; }
     /* 4. Guardar */
-    const aud = an ? Vision.audioEventos(Object.keys(bins).map((k) => bins[k]).sort((a, b) => a.t - b.t)) : { ruido: [], silbato: [], ok: false };
+    const aud = oido ? oido.eventos(2) : { ruido: [], silbato: [], ok: false };
     let data = JSON.stringify({ s: Vision.codificar(samples), a: aud });
     try { localStorage.setItem(VAK(m), data); }
     catch (e) { data = JSON.stringify({ s: Vision.codificar(samples.filter((x, i) => i % 2 === 0)), a: aud }); localStorage.setItem(VAK(m), data); }
-    m.video.auto = { ts: Date.now(), n: samples.length, audio: aud.ok, dur: Math.round(total) };
+    m.video.auto = { ts: Date.now(), modo: "fijo", n: samples.length, audio: aud.ok, dur: Math.round(total) };
     m.video.hecho = [];
     save();
     toast("Análisis terminado");
@@ -3922,23 +4153,35 @@ var Vision = (function () {
     vaOpen: () => {
       const m = curM(); if (!m) return;
       const c = m.video.cal || {};
-      UI.va = { step: "esq", colFor: "nos", cal: { pts: (c.pts || []).slice(), nos: c.nos, riv: c.riv, nosP: c.nosP, rivP: c.rivP, dir: c.dir || 1, cambio: c.cambio !== false } };
-      if (vaSnap()) { vaRender(); return; }
+      UI.va = { step: "modo", colFor: "nos", modo: c.modo || null, cal: { pts: (c.pts || []).slice(), nos: c.nos, riv: c.riv, nosP: c.nosP, rivP: c.rivP, gkN: c.gkN, gkR: c.gkR, gkNP: c.gkNP, gkRP: c.gkRP, dir: c.dir || 1, cambio: c.cambio !== false } };
+      if (vaSnap()) { if (!UI.va.modo) UI.va.modo = UI.va.vh > UI.va.vw ? "mano" : "fijo"; vaRender(); return; }
       /* el vídeo aún no ha pintado ninguna imagen: saltar a un momento y esperar */
       const v = $("#vid"); if (!v) { UI.va = null; return; }
       toast("Cargando una imagen del vídeo…");
-      once(v, "seeked", 6000).then(() => setTimeout(() => { if (UI.va && vaSnap()) vaRender(); else { UI.va = null; toast("Pon el vídeo en un momento en que se vea bien el campo y vuelve a pulsar"); } }, 150));
+      once(v, "seeked", 6000).then(() => setTimeout(() => { if (UI.va && vaSnap()) { if (!UI.va.modo) UI.va.modo = UI.va.vh > UI.va.vw ? "mano" : "fijo"; vaRender(); } else { UI.va = null; toast("Pon el vídeo en un momento en que se vea bien el campo y vuelve a pulsar"); } }, 150));
       v.currentTime = Math.max(v.currentTime, Math.min(30, (v.duration || 60) / 3));
     },
     vaClose: () => { UI.va = null; vaRender(); },
     vaReset: () => { UI.va.cal.pts = []; vaRender(); },
-    vaFrame: () => {
+    vaFrame: (d) => {
       const v = $("#vid"); if (!v) return;
-      const t = (v.currentTime + 37) % Math.max(1, v.duration || 1);
+      const dur = Math.max(1, v.duration || 1), paso = Math.max(1.5, Math.min(37, dur / 10));
+      const t = Math.max(0, Math.min(dur - 0.2, v.currentTime + paso * (Number(d.d) || 1)));
       once(v, "seeked", 5000).then(() => { vaSnap(); vaDraw(); });
       v.currentTime = t;
     },
-    vaStep: (d) => { const A = UI.va; if (d.v === "col" && A.cal.pts.length < 4) return; if (d.v === "col" && Vision.homography(A.cal.pts, Vision.UNIT) == null) { toast("Esas esquinas no forman un campo: revísalas"); return; } A.step = d.v; if (d.v === "col") A.colFor = A.cal.nos && !A.cal.riv ? "riv" : "nos"; vaRender(); },
+    vaStep: (d) => {
+      const A = UI.va;
+      if (d.v === "col" && A.modo === "fijo" && A.step === "esq") {
+        if (A.cal.pts.length < 4) return;
+        if (Vision.homography(A.cal.pts, Vision.UNIT) == null) { toast("Esas esquinas no forman un campo: revísalas"); return; }
+      }
+      A.step = d.v;
+      if (d.v === "col") { const orden = A.modo === "mano" ? ["gkN", "gkR"] : ["nos", "riv", "gkN", "gkR"]; A.colFor = orden.find((k) => !A.cal[k]) || orden[0]; }
+      vaRender();
+    },
+    vaModo: (d) => { UI.va.modo = d.v; vaRender(); },
+    vaColDel: () => { const A = UI.va; delete A.cal[A.colFor]; delete A.cal[A.colFor + "P"]; vaRender(); },
     vaCol: (d) => { UI.va.colFor = d.v; vaRender(); },
     vaDir: (d) => { UI.va.cal.dir = Number(d.v); vaRender(); },
     vaGo: () => vaStart(),
