@@ -1,5 +1,5 @@
 /* Míster · funcionamiento sin conexión */
-const CACHE = "mister-b2935aa645";
+const CACHE = "mister-147a1ab2ef";
 const IA = "mister-ia-1";
 const CORE = ["./", "./index.html", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png"];
 
