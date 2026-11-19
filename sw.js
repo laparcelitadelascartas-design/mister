@@ -1,5 +1,5 @@
 /* Míster · funcionamiento sin conexión */
-const CACHE = "mister-6dcc658251";
+const CACHE = "mister-36a0d7592c";
 const IA = "mister-ia-1";
 const CORE = ["./", "./index.html", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png"];
 
@@ -18,6 +18,8 @@ self.addEventListener("fetch", (e) => {
   const req = e.request;
   if (req.method !== "GET") return;
   const url = new URL(req.url);
+  /* la página de las familias no es parte de la app: siempre de internet y sin guardarla como index.html */
+  if (req.mode === "navigate" && !/\/(index\.html)?$/.test(url.pathname)) return;
   if (req.mode === "navigate") {
     /* Con conexión carga la última versión; sin conexión, la guardada */
     e.respondWith(fetch(req).then((res) => guardar("./index.html", res)).catch(() => caches.match("./index.html")));
